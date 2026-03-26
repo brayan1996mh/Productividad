@@ -50,14 +50,41 @@ DATOS_ACTIVIDADES = {
     ]
 }
 
-# --- 2. ESTILO VISUAL ---
-st.markdown("""
+# --- 2. ESTILO VISUAL (CON IMAGEN DE FONDO OPERACIONAL) ---
+styl = f"""
 <style>
-    .stApp { background-color: #0E1117; color: white; }
-    input:disabled { color: #00E676 !important; font-weight: bold; background-color: rgba(0, 230, 118, 0.05) !important; }
-    .stNumberInput div[data-baseweb="input"] input { color: #29B6F6 !important; font-weight: bold; }
+    .stApp {{
+        /* Imagen de fondo de operadores en líneas de alta tensión con degradado oscuro para no opacar los datos */
+        background-image: linear-gradient(180deg, rgba(5, 15, 25, 0.85) 0%, rgba(5, 10, 15, 0.95) 100%), 
+                          url('https://images.unsplash.com/photo-1621905251189-08b45d6a269e?q=80&w=2000&auto=format&fit=crop');
+        background-size: cover;
+        background-position: center;
+        background-attachment: fixed;
+    }}
+    
+    .stMarkdown, .stSubheader, .stTitle {{
+        margin-top: -10px !important;
+        margin-bottom: 2px !important;
+        text-shadow: 1px 1px 3px black; /* Sombra para que las letras resalten sobre el fondo */
+    }}
+    
+    /* Cajas bloqueadas en verde neón */
+    input:disabled {{
+        color: #00E676 !important;
+        -webkit-text-fill-color: #00E676 !important;
+        font-weight: bold;
+        background-color: rgba(0, 230, 118, 0.1) !important;
+        border: 1px solid #00E676;
+    }}
+    
+    /* Caja de avance en azul eléctrico */
+    .stNumberInput div[data-baseweb="input"] input {{
+        color: #29B6F6 !important;
+        font-weight: bold;
+    }}
 </style>
-""", unsafe_allow_html=True)
+"""
+st.markdown(styl, unsafe_allow_html=True)
 
 st.title("⚡ Control de Productividad Emergencias")
 st.markdown("---")
@@ -68,7 +95,11 @@ c1, c2 = st.columns(2)
 fecha = c1.date_input("FECHA", value=date.today())
 sst_input = c2.text_input("SST")
 
-sst_valida = sst_input.isnumeric() and len(sst_input) == 7
+# Lógica robusta para validar la SST
+sst_valida = False
+if sst_input:
+    if sst_input.isnumeric() and len(sst_input) == 7:
+        sst_valida = True
 
 c3, c4 = st.columns(2)
 capataz = c3.selectbox("CAPATAZ", ["Seleccione..."] + LISTA_CAPATACES)
@@ -111,52 +142,57 @@ if sst_valida and circuito != "Seleccione...":
                 st.markdown("---")
 
         # --- 4. DASHBOARD ---
-        total_p = sum(d["Peso Real"] for d in datos_para_tabla)
-        
-        col_gauge, col_info = st.columns([2, 1])
-        
-        with col_gauge:
-            fig_gauge = go.Figure(go.Indicator(
-                mode = "gauge+number",
-                value = total_p,
-                title = {'text': "Producción Total (%)", 'font': {'color': "white"}},
-                gauge = {
-                    'axis': {'range': [0, 120], 'tickcolor': "white"},
-                    'bar': {'color': "#00E676" if total_p >= 100 else "#FFEB3B"},
-                    'threshold': {'line': {'color': "red", 'width': 4}, 'thickness': 0.75, 'value': 100}
-                }
-            ))
-            fig_gauge.update_layout(paper_bgcolor='rgba(0,0,0,0)', font={'color': "white"}, height=350)
-            st.plotly_chart(fig_gauge, use_container_width=True)
+        if datos_para_tabla:
+            total_p = sum(d["Peso Real"] for d in datos_para_tabla)
+            
+            col_gauge, col_info = st.columns([2, 1])
+            
+            with col_gauge:
+                fig_gauge = go.Figure(go.Indicator(
+                    mode = "gauge+number",
+                    value = total_p,
+                    title = {'text': "Producción Total (%)", 'font': {'color': "white"}},
+                    gauge = {
+                        'axis': {'range': [0, 120], 'tickcolor': "white"},
+                        'bar': {'color': "#00E676" if total_p >= 100 else "#FFEB3B"},
+                        'threshold': {'line': {'color': "red", 'width': 4}, 'thickness': 0.75, 'value': 100}
+                    }
+                ))
+                fig_gauge.update_layout(paper_bgcolor='rgba(0,0,0,0)', font={'color': "white"}, height=350)
+                st.plotly_chart(fig_gauge, use_container_width=True)
 
-        with col_info:
-            st.metric("Puntaje Total", f"{total_p:.2f}%")
-            if total_p >= 100:
-                st.success("✅ Objetivo Cumplido")
-            else:
-                st.info(f"Falta {(100-total_p):.2f}%")
+            with col_info:
+                st.metric("Puntaje Total", f"{total_p:.2f}%")
+                if total_p >= 100:
+                    st.success("✅ Objetivo Cumplido")
+                else:
+                    st.info(f"Falta {(100-total_p):.2f}%")
 
-        # --- GRÁFICA DE BARRAS CORREGIDA ---
-        st.write("### Comparativo de Pesos")
-        df_plot = pd.DataFrame(datos_para_tabla)
-        
-        # Reformateamos el DataFrame para que Plotly lo entienda sin distorsionarse
-        df_melted = df_plot.melt(id_vars="Actividad", var_name="Tipo de Peso", value_name="Porcentaje")
-        
-        fig_bar = px.bar(
-            df_melted, 
-            x="Actividad", 
-            y="Porcentaje", 
-            color="Tipo de Peso",
-            barmode="group",
-            template="plotly_dark",
-            color_discrete_map={"Peso Base": "#B0BEC5", "Peso Real": "#0288D1"}
-        )
-        # Ajuste para que los nombres no se amontonen
-        fig_bar.update_layout(xaxis_tickangle=-45)
-        st.plotly_chart(fig_bar, use_container_width=True)
+            # --- GRÁFICA DE BARRAS LIMPIA ---
+            st.write("### Comparativo de Pesos")
+            df_plot = pd.DataFrame(datos_para_tabla)
+            
+            # Reorganizamos los datos para que Plotly los dibuje correctamente
+            df_melted = df_plot.melt(id_vars="Actividad", var_name="Tipo de Peso", value_name="Porcentaje")
+            
+            fig_bar = px.bar(
+                df_melted, 
+                x="Actividad", 
+                y="Porcentaje", 
+                color="Tipo de Peso",
+                barmode="group",
+                template="plotly_dark",
+                color_discrete_map={"Peso Base": "#B0BEC5", "Peso Real": "#0288D1"}
+            )
+            # Evitamos que los textos se encimen
+            fig_bar.update_layout(
+                xaxis_tickangle=-45,
+                plot_bgcolor='rgba(0,0,0,0)',
+                paper_bgcolor='rgba(0,0,0,0)'
+            )
+            st.plotly_chart(fig_bar, use_container_width=True)
 
 elif sst_input and not sst_valida:
-    st.warning("⚠️ La SST debe contener exactamente 7 números.")
+    st.warning("⚠️ La SST debe contener exactamente 7 números para habilitar la matriz.")
 else:
-    st.info("💡 Ingrese la SST (7 números) y seleccione un circuito.")
+    st.info("💡 Ingrese la SST (7 números exactos) y seleccione el circuito para comenzar.")
