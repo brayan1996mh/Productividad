@@ -3,13 +3,11 @@ import pandas as pd
 import plotly.graph_objects as go
 import plotly.express as px
 from datetime import date
-import re
 
 # Configuración de la página
 st.set_page_config(page_title="Productividad Emergencias ⚡", page_icon="⚡", layout="wide", initial_sidebar_state="collapsed")
 
 # --- 1. BASE DE DATOS INTEGRADA ---
-
 LISTA_CAPATACES = [
     "A. Aldonate", "A. Atoche", "A. Godoy", "A. Isuiza", "A. Torres", "A. Vigoria", 
     "A. Villanueva", "C. Hernandez", "C. Mayaudon", "C. Ñaupas", "C. Padilla", 
@@ -57,10 +55,12 @@ st.markdown("""
 <style>
     .stApp { background-color: #0E1117; color: white; }
     input:disabled { color: #00E676 !important; font-weight: bold; background-color: rgba(0, 230, 118, 0.05) !important; }
+    /* Estilo para que el número de avance se vea bien con el % */
+    .stNumberInput div[data-baseweb="input"] input { color: #29B6F6 !important; font-weight: bold; }
 </style>
 """, unsafe_allow_html=True)
 
-st.title("⚡ Control de Productividad Integrado")
+st.title("⚡ Control de Productividad Emergencias")
 st.markdown("---")
 
 # --- 3. SELECCIÓN DE DATOS ---
@@ -68,31 +68,23 @@ st.subheader("Datos Generales")
 c1, c2 = st.columns(2)
 fecha = c1.date_input("FECHA", value=date.today())
 
-# REGLA SST: Solo 7 números
-sst_input = c2.text_input("SST (Debe tener exactamente 7 números)", help="Ejemplo: 1234567")
+# CAMPO SST LIMPIO
+sst_input = c2.text_input("SST")
 
-# Validación de SST
-sst_valida = False
-if sst_input:
-    if not sst_input.isdigit():
-        st.error("❌ La SST debe contener solo números.")
-    elif len(sst_input) != 7:
-        st.warning(f"⚠️ La SST debe tener 7 dígitos (llevas {len(sst_input)}).")
-    else:
-        st.success("✅ SST Correcta")
-        sst_valida = True
+# Validación lógica (7 números exactos)
+sst_valida = sst_input.isdigit() and len(sst_input) == 7
 
 c3, c4 = st.columns(2)
 capataz = c3.selectbox("CAPATAZ", ["Seleccione..."] + LISTA_CAPATACES)
-circuito = c4.selectbox("TIPO DE CIRCUITO / SECTOR", ["Seleccione..."] + list(DATOS_ACTIVIDADES.keys()))
+circuito = c4.selectbox("CIRCUITO / SECTOR", ["Seleccione..."] + list(DATOS_ACTIVIDADES.keys()))
 
 st.markdown("---")
 
-# Solo mostramos actividades si la SST es válida
+# Solo mostramos actividades si la SST cumple la regla de 7 números
 if sst_valida and circuito != "Seleccione...":
-    st.subheader(f"Actividades para {circuito}")
+    st.subheader(f"Actividades: {circuito}")
     opciones_act = [a["ACTIVIDAD"] for a in DATOS_ACTIVIDADES[circuito]]
-    seleccion = st.multiselect("Busca y agrega las actividades realizadas:", opciones_act)
+    seleccion = st.multiselect("Agregar trabajos:", opciones_act, label_visibility="collapsed")
 
     if seleccion:
         st.markdown("---")
@@ -111,7 +103,7 @@ if sst_valida and circuito != "Seleccione...":
                 with col2:
                     st.text_input("Peso Base", value=f"{peso_base}%", disabled=True, key=f"pb_{nombre_act}")
                 with col3:
-                    # AVANCE EN %: Añadimos el símbolo de porcentaje al campo
+                    # Formato de porcentaje directo en el campo
                     avance = st.number_input("Avance (%)", 0, 100, 100, 10, key=f"av_{nombre_act}", format="%d%%")
                 with col4:
                     peso_real = (avance / 100) * peso_base
@@ -128,9 +120,9 @@ if sst_valida and circuito != "Seleccione...":
             fig = go.Figure(go.Indicator(
                 mode = "gauge+number",
                 value = total_p,
-                title = {'text': "Productividad Total del Día"},
+                title = {'text': "Producción Total", 'font': {'color': "white"}},
                 gauge = {
-                    'axis': {'range': [0, 120]},
+                    'axis': {'range': [0, 120], 'tickcolor': "white"},
                     'bar': {'color': "#00E676" if total_p >= 100 else "#FFEB3B"},
                     'threshold': {'line': {'color': "red", 'width': 4}, 'thickness': 0.75, 'value': 100}
                 }
@@ -141,10 +133,11 @@ if sst_valida and circuito != "Seleccione...":
         with col_info:
             st.metric("Puntaje Total", f"{total_p:.2f}%")
             if total_p >= 100:
-                st.success("✅ ¡Meta cumplida!")
+                st.success("✅ Objetivo Cumplido")
             else:
-                st.warning(f"Faltan {(100-total_p):.2f}% para la meta.")
-elif not sst_valida and sst_input:
-    st.info("💡 Por favor, ingresa una SST válida de 7 dígitos para habilitar el registro de actividades.")
+                st.info(f"Falta {(100-total_p):.2f}%")
+
+elif sst_input and not sst_valida:
+    st.error("⚠️ La SST debe ser de exactamente 7 números.")
 else:
-    st.info("👆 Comienza ingresando la SST y seleccionando el tipo de circuito.")
+    st.info("💡 Ingrese la SST (7 dígitos) y seleccione un circuito para comenzar.")
