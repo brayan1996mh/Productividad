@@ -68,7 +68,6 @@ c1, c2 = st.columns(2)
 fecha = c1.date_input("FECHA", value=date.today())
 sst_input = c2.text_input("SST")
 
-# Lógica de validación
 sst_valida = sst_input.isnumeric() and len(sst_input) == 7
 
 c3, c4 = st.columns(2)
@@ -86,9 +85,8 @@ if sst_valida and circuito != "Seleccione...":
         st.markdown("---")
         st.subheader("Matriz de Avance")
         
-        datos_finales = []
+        datos_para_tabla = []
         for nombre_act in seleccion:
-            # Buscamos el peso correspondiente a la actividad
             peso_base = next(item["PESO"] for item in DATOS_ACTIVIDADES[circuito] if item["ACTIVIDAD"] == nombre_act)
             
             with st.container():
@@ -105,51 +103,60 @@ if sst_valida and circuito != "Seleccione...":
                     peso_real = (avance / 100) * peso_base
                     st.text_input("Peso Real", value=f"{peso_real:.2f}%", disabled=True, key=f"pr_{nombre_act}")
                 
-                # ESTA ES LA LÍNEA QUE ARREGLA EL ERROR (añadido "Base": peso_base)
-                datos_finales.append({"Act": nombre_act, "Real": peso_real, "Base": peso_base})
+                datos_para_tabla.append({
+                    "Actividad": nombre_act, 
+                    "Peso Base": peso_base, 
+                    "Peso Real": peso_real
+                })
                 st.markdown("---")
 
         # --- 4. DASHBOARD ---
-        if datos_finales:
-            total_p = sum(d["Real"] for d in datos_finales)
-            
-            # Crear DataFrame para la gráfica de barras
-            df_plot = pd.DataFrame(datos_finales)
-            
-            col_gauge, col_info = st.columns([2, 1])
-            
-            with col_gauge:
-                fig = go.Figure(go.Indicator(
-                    mode = "gauge+number",
-                    value = total_p,
-                    title = {'text': "Producción Total", 'font': {'color': "white"}},
-                    gauge = {
-                        'axis': {'range': [0, 120], 'tickcolor': "white"},
-                        'bar': {'color': "#00E676" if total_p >= 100 else "#FFEB3B"},
-                        'threshold': {'line': {'color': "red", 'width': 4}, 'thickness': 0.75, 'value': 100}
-                    }
-                ))
-                fig.update_layout(paper_bgcolor='rgba(0,0,0,0)', font={'color': "white"}, height=350)
-                st.plotly_chart(fig, use_container_width=True)
+        total_p = sum(d["Peso Real"] for d in datos_para_tabla)
+        
+        col_gauge, col_info = st.columns([2, 1])
+        
+        with col_gauge:
+            fig_gauge = go.Figure(go.Indicator(
+                mode = "gauge+number",
+                value = total_p,
+                title = {'text': "Producción Total (%)", 'font': {'color': "white"}},
+                gauge = {
+                    'axis': {'range': [0, 120], 'tickcolor': "white"},
+                    'bar': {'color': "#00E676" if total_p >= 100 else "#FFEB3B"},
+                    'threshold': {'line': {'color': "red", 'width': 4}, 'thickness': 0.75, 'value': 100}
+                }
+            ))
+            fig_gauge.update_layout(paper_bgcolor='rgba(0,0,0,0)', font={'color': "white"}, height=350)
+            st.plotly_chart(fig_gauge, use_container_width=True)
 
-            with col_info:
-                st.metric("Puntaje Total", f"{total_p:.2f}%")
-                if total_p >= 100:
-                    st.success("✅ Objetivo Cumplido")
-                else:
-                    st.info(f"Falta {(100-total_p):.2f}%")
-            
-            # Gráfica comparativa de barras
-            fig_bar = px.bar(
-                df_plot, x="Act", y=["Base", "Real"], 
-                barmode='group', 
-                title="Comparativo: Peso Base vs Real",
-                labels={'value': '% Peso', 'Act': 'Actividad', 'variable': 'Tipo'},
-                template="plotly_dark"
-            )
-            st.plotly_chart(fig_bar, use_container_width=True)
+        with col_info:
+            st.metric("Puntaje Total", f"{total_p:.2f}%")
+            if total_p >= 100:
+                st.success("✅ Objetivo Cumplido")
+            else:
+                st.info(f"Falta {(100-total_p):.2f}%")
+
+        # --- GRÁFICA DE BARRAS CORREGIDA ---
+        st.write("### Comparativo de Pesos")
+        df_plot = pd.DataFrame(datos_para_tabla)
+        
+        # Reformateamos el DataFrame para que Plotly lo entienda sin distorsionarse
+        df_melted = df_plot.melt(id_vars="Actividad", var_name="Tipo de Peso", value_name="Porcentaje")
+        
+        fig_bar = px.bar(
+            df_melted, 
+            x="Actividad", 
+            y="Porcentaje", 
+            color="Tipo de Peso",
+            barmode="group",
+            template="plotly_dark",
+            color_discrete_map={"Peso Base": "#B0BEC5", "Peso Real": "#0288D1"}
+        )
+        # Ajuste para que los nombres no se amontonen
+        fig_bar.update_layout(xaxis_tickangle=-45)
+        st.plotly_chart(fig_bar, use_container_width=True)
 
 elif sst_input and not sst_valida:
     st.warning("⚠️ La SST debe contener exactamente 7 números.")
 else:
-    st.info("💡 Complete la SST (7 números) y el circuito para habilitar el registro.")
+    st.info("💡 Ingrese la SST (7 números) y seleccione un circuito.")
