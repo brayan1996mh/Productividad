@@ -47,7 +47,7 @@ sst_valida = bool(sst_input and re.match(r'^\d{7}$', sst_input))
 
 c3, c4 = st.columns(2)
 capataz = c3.selectbox("CAPATAZ", ["Seleccione..."] + CAPATACES)
-circuito = c4.selectbox("CIRCUITO / SECTOR", ["Seleccione..."] + list(ACTIVIDADES_POR_CIRCUITO.keys()))
+circuito = c4.selectbox("TIPO DE ACTIVIDAD", ["Seleccione..."] + list(ACTIVIDADES_POR_CIRCUITO.keys()))
 
 st.markdown("---")
 
@@ -67,7 +67,7 @@ if sst_valida and circuito != "Seleccione...":
                 st.write(f"### 🔧 {act}")
                 col1, col2, col3, col4 = st.columns(4)
                 
-                estado = col1.selectbox("Estado", ["Seleccione...", "Finalizado", "Devuelto", "Pendiente"], key=f"e_{act}")
+                estado = col1.selectbox("Estado", ["Seleccione...", "Finalizado", "Devuelto", "Indebido"], key=f"e_{act}")
                 col2.text_input("Peso Base", value=f"{peso_base}%", disabled=True, key=f"b_{act}")
                 
                 avance = col3.number_input("Avance (%)", min_value=0, max_value=100, value=None, step=10, placeholder="Ej: 100", key=f"a_{act}")
