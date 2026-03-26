@@ -6,6 +6,10 @@ import re
 
 st.set_page_config(page_title="Tablero de Productividad ⚡", page_icon="⚡", layout="wide")
 
+# --- CONTROL DE PANTALLA (Para ocultar todo al grabar) ---
+if 'guardado' not in st.session_state:
+    st.session_state.guardado = False
+
 # Fondo Operacional
 st.markdown("""
 <style>
@@ -18,7 +22,6 @@ st.markdown("""
     input:disabled { color: #00E676 !important; -webkit-text-fill-color: #00E676 !important; font-weight: bold; background-color: rgba(0, 230, 118, 0.1) !important; border: 1px solid #00E676; }
     .stNumberInput div[data-baseweb="input"] input { color: #29B6F6 !important; font-weight: bold; }
     
-    /* El diseño de la nueva caja que no se congela */
     .caja-peso-real { background-color: rgba(0, 230, 118, 0.1); border: 1px solid #00E676; border-radius: 8px; padding: 8px 12px; color: #00E676; font-weight: bold; font-family: sans-serif; height: 42px; display: flex; align-items: center; margin-top: 1px; }
     .lbl-peso { font-size: 14px; margin-bottom: 2px; color: #FAFAFA; }
 </style>
@@ -26,6 +29,19 @@ st.markdown("""
 
 st.title("⚡ Tablero de Control - Producción")
 
+# --- PANTALLA DE ÉXITO (Solo sale si se presionó Grabar) ---
+if st.session_state.guardado:
+    st.markdown("<br><br><br>", unsafe_allow_html=True)
+    st.success("✅ Productividad enviada con éxito")
+    st.markdown("<br>", unsafe_allow_html=True)
+    col1, col2, col3 = st.columns([1, 1, 1])
+    with col2:
+        if st.button("⬅️ Hacer un nuevo registro", use_container_width=True):
+            st.session_state.guardado = False
+            st.rerun()
+    st.stop() # Esto corta el código aquí para que no se dibuje nada más abajo
+
+# --- BASE DE DATOS ---
 CAPATACES = ["A. Aldonate", "A. Atoche", "A. Godoy", "A. Isuiza", "A. Torres", "A. Vigoria", "A. Villanueva", "C. Hernandez", "C. Mayaudon", "C. Ñaupas", "C. Padilla", "C. Salcedo", "D. Delgado", "D. Taquiri", "E. Ancco", "E. Antay", "E. Chihuan", "E. Diaz", "E. Flores", "E. La rosa", "F. Lozano", "F. Ramos", "H. Cabrera", "J. Abanto", "J. Apaza", "J. Arotinco", "J. Delgado", "J. Huari", "J. Panaifo", "J. Parra", "J. Salvador", "J. Suarez", "J. Villanueva", "L. Angeles", "L. Ayala", "L. Fiore", "M. Barrantes", "N. Pauro", "O. Aguilar", "P. Capcha", "R. Albites", "R. Rojas", "R. Torres", "S. Jacinto", "S. Lazaro", "V. Bordon", "V. Campos", "V. Orrillo", "V. Pérez", "V. Torres", "Y. Padilla"]
 
 ACTIVIDADES_POR_CIRCUITO = {
@@ -70,7 +86,7 @@ if sst_valida and circuito != "Seleccione...":
                 estado = col1.selectbox("Estado", ["Seleccione...", "Finalizado", "Devuelto", "Pendiente"], key=f"e_{act}")
                 col2.text_input("Peso Base", value=f"{peso_base}%", disabled=True, key=f"b_{act}")
                 
-                avance = col3.number_input("Avance (%)", min_value=0, max_value=100, value=None, step=10, placeholder="Ej: 100", key=f"a_{act}")
+                avance = col3.number_input("Avance (%)", min_value=0, max_value=100, value=None, step=10, placeholder="Ej: 100 (Presiona Enter)", key=f"a_{act}")
                 
                 if avance is not None:
                     peso_real = (float(avance) / 100.0) * float(peso_base)
@@ -86,8 +102,17 @@ if sst_valida and circuito != "Seleccione...":
         
         if datos_reporte:
             total_real = sum(d["Real"] for d in datos_reporte)
-            st.markdown("---")
             
+            # --- BOTÓN DE GUARDADO (Debajo de la matriz, encima de gráficos) ---
+            st.markdown("---")
+            col_btn1, col_btn2, col_btn3 = st.columns([1, 2, 1])
+            with col_btn2:
+                if st.button("💾 Grabar Productividad", use_container_width=True):
+                    st.session_state.guardado = True
+                    st.rerun()  # Reinicia la página para mostrar solo el mensaje de éxito
+            st.markdown("---")
+
+            # --- GRÁFICOS / DASHBOARD ---
             c_gauge, c_info = st.columns([2, 1])
             with c_gauge:
                 fig_g = go.Figure(go.Indicator(
@@ -109,14 +134,6 @@ if sst_valida and circuito != "Seleccione...":
             ])
             fig_b.update_layout(barmode='group', template="plotly_dark", plot_bgcolor='rgba(0,0,0,0)', paper_bgcolor='rgba(0,0,0,0)', xaxis_tickangle=-45)
             st.plotly_chart(fig_b, use_container_width=True)
-
-            # --- SECCIÓN DEL BOTÓN DE GUARDADO ---
-            st.markdown("---")
-            col_btn1, col_btn2, col_btn3 = st.columns([1, 2, 1])
-            with col_btn2:
-                if st.button("💾 Grabar Productividad", use_container_width=True):
-                    st.success("✅ Productividad enviada con éxito")
-                    st.balloons()  # ¡Una pequeña celebración visual en pantalla!
 
 elif sst_input and not sst_valida:
     st.error("⚠️ Ingrese exactamente 7 números en la SST.")
