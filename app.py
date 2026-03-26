@@ -63,14 +63,19 @@ if sst_valida and circuito != "Seleccione...":
                 st.write(f"### 🔧 {act}")
                 col1, col2, col3, col4 = st.columns(4)
                 
-                # Estado arranca en blanco
                 estado = col1.selectbox("Estado", ["Seleccione...", "Finalizado", "Devuelto", "Pendiente"], key=f"e_{act}")
                 col2.text_input("Peso Base", value=f"{peso_base}%", disabled=True, key=f"b_{act}")
                 
-                # Avance arranca en blanco (value=None) y guía al usuario con el placeholder
-                avance = col3.number_input("Avance (%)", min_value=0, max_value=100, value=None, step=10, placeholder="Ej: 100", key=f"a_{act}")
+                # LA LÓGICA DE AUTOMATIZACIÓN (El usuario trabaja menos)
+                if estado == "Finalizado":
+                    val_defecto = 100
+                elif estado in ["Devuelto", "Pendiente"]:
+                    val_defecto = 0
+                else:
+                    val_defecto = None
                 
-                # Cálculo protegido: si el avance está en blanco, el peso real es 0
+                avance = col3.number_input("Avance (%)", min_value=0, max_value=100, value=val_defecto, step=10, placeholder="Ej: 100", key=f"a_{act}", format="%d")
+                
                 peso_real = (avance / 100) * peso_base if avance is not None else 0.0
                 
                 col4.text_input("Peso Real", value=f"{peso_real:.2f}%", disabled=True, key=f"r_{act}")
