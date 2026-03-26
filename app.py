@@ -3,6 +3,7 @@ import pandas as pd
 import plotly.graph_objects as go
 from datetime import date
 import re
+import json  # <--- EL TRADUCTOR NUEVO
 
 st.set_page_config(page_title="Tablero de Productividad ⚡", page_icon="⚡", layout="wide")
 
@@ -91,7 +92,6 @@ if sst_valida and circuito != "Seleccione...":
                 <div class="caja-peso-real">{peso_real:.2f}%</div>
                 """, unsafe_allow_html=True)
                 
-                # Guardamos TODOS los datos de la fila para mandarlos a Sheets
                 datos_reporte.append({
                     "Act": act, "Estado": estado, "Avance": avance, 
                     "Base": peso_base, "Real": peso_real
@@ -103,21 +103,19 @@ if sst_valida and circuito != "Seleccione...":
             st.markdown("---")
             col_btn1, col_btn2, col_btn3 = st.columns([1, 2, 1])
             with col_btn2:
-                # --- LA MAGIA: CONEXIÓN A GOOGLE SHEETS ---
                 if st.button("💾 Grabar Productividad", use_container_width=True):
                     try:
                         import gspread
                         from google.oauth2.service_account import Credentials
                         
-                        # Autenticación con el Secreto de Streamlit
+                        # --- LECTURA DEL JSON CORREGIDA ---
                         scopes = ["https://www.googleapis.com/auth/spreadsheets", "https://www.googleapis.com/auth/drive"]
-                        credenciales = Credentials.from_service_account_info(st.secrets["gcp_service_account"], scopes=scopes)
+                        info_credenciales = json.loads(st.secrets["gcp_json"])
+                        credenciales = Credentials.from_service_account_info(info_credenciales, scopes=scopes)
                         cliente = gspread.authorize(credenciales)
                         
-                        # Abre el Excel y selecciona la Hoja 1
                         hoja = cliente.open("Productividad_Emergencias").sheet1
                         
-                        # Prepara las filas
                         filas_a_insertar = []
                         for d in datos_reporte:
                             fila = [
@@ -128,15 +126,13 @@ if sst_valida and circuito != "Seleccione...":
                             ]
                             filas_a_insertar.append(fila)
                             
-                        # Manda la información a Google Sheets de golpe
                         hoja.append_rows(filas_a_insertar)
                         
-                        # Dispara la pantalla de éxito
                         st.session_state.guardado = True
                         st.rerun()
                         
                     except Exception as e:
-                        st.error(f"⚠️ Error al conectar con Google Sheets. Revisa tus credenciales o el nombre del archivo. Detalle técnico: {e}")
+                        st.error(f"⚠️ Error al conectar con Google Sheets. Detalle técnico: {e}")
             st.markdown("---")
 
             c_gauge, c_info = st.columns([2, 1])
