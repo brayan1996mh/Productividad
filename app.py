@@ -2,9 +2,8 @@ import streamlit as st
 import pandas as pd
 import plotly.graph_objects as go
 import plotly.express as px
-import random
 
-# Configuración de la página (Layout ancho para mejor manejo táctil)
+# Configuración de la página (Layout ancho para mejor manejo de tabla)
 st.set_page_config(page_title="Gestión Pro Diaria AP ⚡", page_icon="⚡", layout="wide", initial_sidebar_state="collapsed")
 
 # 1. ESTILO PROFESIONAL Y SUBTIL (CSS)
@@ -13,7 +12,7 @@ styl = f"""
     /* Estilo para el fondo (Background de esquemas eléctricos sutil) */
     .stApp {{
         background-image: linear-gradient(180deg, rgba(0,0,0,0.85) 0%, rgba(10,30,50,0.92) 100%), 
-                          url('data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIzMDAnIGhlaWdodD0iMzAwIiB2aWV3Qm94PSIwIDAgMzAwIDMwMCI+PHBhdGggZD0iTTAgMGgzMDB2MzAwSDB6IiBmaWxsPSJub25lIi8+PHBhdGggZD0iTTEwMCAxMDBoMTB2MTBoLTEwek0xNDAgMTAwaDEwdjEwaC0xMHpNMTgwIDEwMGgxMHYxMGgtMTB6TTIwMCAxMDBoMTB2MTBoLTEwek0yNDAgMTAwaDEwdjEwaC0xMHpNMTAwIDE4MGgxMHYxMGgtMTB6TTE0MCAxODBoMTB2MTBoLTEwek0xODAgMTgwaDEwdjEwaC0xMHpNMjAwIDE4MGgxMHYxMGgtMTB6TTI0MCAxODBoMTB2MTBoLTEwek0xMDAgMjQwaDEwdjEwaC0xMHpNMTQwIDI0MGgxMHYxMGgtMTB6TTE4MCAyNDBoMTB2MTBoLTEwek0yMDAgMjQwaDEwdjEwaC0xMHpNMjQwIDI0MGgxMHYxMGgtMTB6TTEwMCAzMDBoMTB2MTBoLTEwek0xNDAgMzAwSDB2LTE5NjhIMHoiIGZpbGw9Im5vbmUiLz48cGF0aCBkPSJNMCAwYzIuNDU4IDAgNC45MjEuMTM5IDcuMzc1LjQwOEw5Ny43MjUgOTEuMTVMMTYyLjcwNSA5M3MyNDUuNTQxIDExOC4wNjcgMjc4LjY5OCAxNTkuNjUyQzE1MC40MDQgMTg5LjY4IDkwLjgzMiAyNDkuMjUyIDAgMzAwY0MgLTQ4Ljg5OCA0MC43MDcgLTg4Ljc4NyA4OC43ODcgLTg4Ljc4N2MxNC44NDYgMCAyOS4wMTQgMy45MzggNDEuNzY0IDEwLjc3OEM3Ny43MDkgMTkyLjc5NCA0MC43MDcgMTU2LjAwNCAwIDM4NS43NEMwIDMwMCAtNDUuNzA5IDI3OS4wMzYgLTk1LjUzMSAyMzY4LjU4NEMxNzYuOTczIDI0NS41NDEgMjUuNTQxIDk1LjMzMSB6IiBmaWxsPSIjMDcwMDNiMjMiLz48L3N2Zz4=');
+                          url('data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIzMDAnIGhlaWdodD0iMzAwIiB2aWV3Qm94PSIwIDAgMzAwIDMwMCI+PHBhdGggZD0iTTAgMGgzMDB2MzAwSDB6IiBmaWxsPSJub25lIi8+PHBhdGggZD0iTTEwMCAxMDBoMTB2MTBoLTEwek0xNDAgMTAwaDEwdjEwaC0xMHpNMTgwIDEwMGgxMHYxMGgtMTB6TTIwMCAxMDBoMTB2MTBoLTEwek0yNDAgMTAwaDEwdjEwaC0xMHpNMTAwIDE0MGgxMHYxMGgtMTB6TTE4MCAxNDBoMTB2MTBoLTEwek0yMDAgMTQwaDEwdjEwaC0xMHpNMjQwIDE0MGgxMHYxMGgtMTB6TTEwMCAxODB4MTB2MTBoLTEwek0xNDAgMTgwSDB2LTE5NjhIMHoiIGZpbGw9Im5vbmUiLz48cGF0aCBkPSJNMCAwYzIuNDU4IDAgNC45MjEuMTM5IDcuMzc1LjQwOEw5Ny43MjUgOTEuMTVMMTYyLjcwNSA5M3MyNDUuNTQxIDExOC4wNjcgMjc4LjY5OCAxNTkuNjUyQzE1MC40MDQgMTg5LjY4IDkwLjgzMiAyNDkuMjUyIDAgMzAwY0MgLTQ4Ljg5OCA0MC43MDcgLTg4Ljc4NyA4OC43ODcgLTg4Ljc4N2MxNC44NDYgMCAyOS4wMTQgMy45MzggNDEuNzY0IDEwLjc3OEM3Ny43MDkgMTkyLjc5NCA0MC43MDcgMTU2LjAwNCAwIDM4NS43NEMwIDMwMCAtNDUuNzA5IDI3OS4wMzYgLTk1LjUzMSAyMzY4LjU4NEMxNzYuOTczIDI0NS41NDEgMjUuNTQxIDk1LjMzMSB6IiBmaWxsPSIjMDcwMDNiMjMiLz48L3N2Zz4=');
         background-size: 400px;
         background-repeat: repeat;
         background-blend-mode: multiply;
@@ -25,17 +24,13 @@ styl = f"""
         margin-bottom: 2px !important;
     }}
 
-    /* Compactación del bloque de tareas (Paso 2) */
-    .stForm {{
-        padding: 5px !important;
-        border-radius: 8px !important;
+    /* Estilo profesional para métricas */
+    [data-testid="stMetricValue"] {{
+        font-size: 1.5rem !important;
+        color: #00E676 !important;
     }}
-
-    /* Estilo para las cabeceras de columna de datos táctiles */
-    [data-testid="stHorizontalBlock"] .stMarkdown {{
-        color: #B0BEC5 !important;
-        font-weight: bold;
-        margin-bottom: -5px !important;
+    [data-testid="stMetricLabel"] {{
+        font-size: 0.9rem !important;
     }}
 </style>
 """
@@ -71,49 +66,52 @@ seleccionadas = st.multiselect(
 
 if seleccionadas:
     st.markdown("---")
-    # 2. REPORTE DE CAMPO OPERATIVO (Layout Ultra Compacto para Móvil)
+    # 2. REPORTE DE CAMPO OPERATIVO (Layout Tabla Táctil)
     st.subheader("Paso 2: Reporte de Campo (Dinámico y Táctil)")
-    st.caption("El `% Peso Real` se calcula al instante de ajustar el deslizador de avance.")
+    st.caption("Todas las celdas de avance están limpias (0%) para que el capataz ingrese el dato numérico. El `% Peso Real` se calcula al instante.")
     
-    # Cabeceras de columna para los datos táctiles
+    # Cabeceras de columna fijas tipo Tabla (como imagen 2)
     st.write("") # Espaciador profesional
-    cH1, cH2, cH3 = st.columns([1.5, 3, 1.5]) # Proporciones de columna dactilar
-    cH1.write("##### Estado")
-    cH2.write("##### % Avance (0-100%)")
-    cH3.write("##### % Peso Real")
+    cH1, cH2, cH3, cH4, cH5 = st.columns([2.5, 1.5, 1.5, 1.5, 1.5]) # Proporciones de tabla dactilar
+    cH1.write("##### Actividad")
+    cH2.write("##### Estado")
+    cH3.write("##### % Peso Base")
+    cH4.write("##### % Avance (0-100)")
+    cH5.write("##### % Peso Real")
     
     datos_reporte = []
     total_base_peso = 0
     
-    # Creamos las "tarjetas" compactas
+    # Creamos las filas compactas de la tabla
     for act in seleccionadas:
         with st.container():
-            # Título de actividad encíma
-            st.write(f"#### 🔧 {act}")
+            # Cinco columnas en una sola fila (Tabla compacta)
+            col1, col2, col3, col4, col5 = st.columns([2.5, 1.5, 1.5, 1.5, 1.5]) 
             
-            # Tres columnas en una sola fila para compactar el espacio vertical en móvil
-            col1, col2, col3 = st.columns([1.5, 3, 1.5]) 
-            
-            # Columna 1: Estado táctil (selectbox)
+            # Columna 1: Nombre de Actividad (Estático)
             with col1:
-                # Opciones compactas: Finalizado o Devuelto
-                estado = st.selectbox("Estado", ["Finalizado", "Devuelto"], key=f"est_{act}", label_visibility="collapsed")
+                st.write(f"🔧 **{act}**")
             
-            # Columna 2: Avance táctil (slider con step de 5% para rapidez dactilar)
+            # Columna 2: Estado táctil (selectbox con opciones exactas)
             with col2:
-                # Comportamiento automático: si Finalizado -> 100%, si Devuelto -> 50% por defecto
-                avance_default = 100 if estado == "Finalizado" else 50
-                avance = st.slider("% Avance", min_value=0, max_value=100, value=avance_default, step=5, key=f"av_{act}", label_visibility="collapsed")
+                # Opciones: Finalizado, Devuelto, Indebido
+                estado = st.selectbox("Estado", ["Finalizado", "Devuelto", "Indebido"], key=f"est_{act}", label_visibility="collapsed")
             
-            # Columna 3: Peso Obtenido (Cálculo automático en Metric compacto)
+            # Columna 3: Peso Base (Estático)
             with col3:
+                st.metric("% Peso Base", f"{actividades[act]}%", label_visibility="collapsed")
+            
+            # Columna 4: Avance táctil (Casilla de entrada numérica en BLANCO/0% por defecto)
+            with col4:
+                # Number input limitado estrictamente de 0 a 100
+                avance = st.number_input("% Avance", min_value=0, max_value=100, value=0, step=10, key=f"av_{act}", label_visibility="collapsed")
+            
+            # Columna 5: Peso Obtenido (Cálculo automático en Metric compacto)
+            with col5:
                 # Cálculo automático en tiempo real
                 peso_real = (avance / 100.0) * actividades[act]
                 # Usamos st.metric formateado profesionalmente
-                st.metric("Peso Obtenido", f"{peso_real:.1f}%", help="Cálculo automático: Peso Base * % Avance / 100")
-            
-            # Un pequeño espaciador profesional
-            st.divider()
+                st.metric("% Peso Real", f"{peso_real:.1f}%", help="Cálculo automático: Peso Base * % Avance / 100", label_visibility="collapsed")
             
             # Guardamos los datos para los gráficos
             datos_reporte.append({
@@ -139,7 +137,7 @@ if seleccionadas:
             mode = "gauge+number",
             value = total_peso_real,
             domain = {'x': [0, 1], 'y': [0, 1]},
-            title = {'text': "Avance Real Acumulado del Día", 'font': {'size': 24, 'color': "white"}},
+            title = {'text': "Avance Real Acumulado", 'font': {'size': 24, 'color': "white"}},
             gauge = {
                 'axis': {'range': [0, 150], 'tickwidth': 1, 'tickcolor': "white"},
                 'bar': {'color': "#00E676" if total_peso_real >= 100 else "#29B6F6"}, # Verde si llega a 100, azul si falta
