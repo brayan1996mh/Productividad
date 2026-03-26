@@ -35,7 +35,7 @@ st.markdown(styl, unsafe_allow_html=True)
 @st.cache_data
 def cargar_datos():
     try:
-        # AHORA LEEMOS LOS ARCHIVOS EXCEL DIRECTAMENTE (.xlsx)
+        # AHORA LEEMOS LOS ARCHIVOS EXCEL DIRECTAMENTE SIN INSTRUCCIONES EXTRA
         df_act = pd.read_excel('Actividades emergencias.xlsx')
         df_cap = pd.read_excel('Capataces Emergencias.xlsx')
         
@@ -175,4 +175,3 @@ if circuito_seleccionado != "Seleccione un circuito...":
                 st.warning(f"⚠️ Atención: Cumplimiento al {total_peso_real:.1f}%. Faltan {100 - total_peso_real:.1f}% real para cerrar la meta diaria.")
 else:
     st.info("👆 Selecciona un Circuito primero para cargar las actividades correspondientes.")
-    
