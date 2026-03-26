@@ -175,3 +175,4 @@ if circuito_seleccionado != "Seleccione un circuito...":
                 st.warning(f"⚠️ Atención: Cumplimiento al {total_peso_real:.1f}%. Faltan {100 - total_peso_real:.1f}% real para cerrar la meta diaria.")
 else:
     st.info("👆 Selecciona un Circuito primero para cargar las actividades correspondientes.")
+    
