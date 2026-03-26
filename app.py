@@ -3,7 +3,7 @@ import pandas as pd
 import plotly.graph_objects as go
 from datetime import date
 import re
-import json  # <--- EL TRADUCTOR NUEVO
+import json
 
 st.set_page_config(page_title="Tablero de Productividad ⚡", page_icon="⚡", layout="wide")
 
@@ -108,9 +108,12 @@ if sst_valida and circuito != "Seleccione...":
                         import gspread
                         from google.oauth2.service_account import Credentials
                         
-                        # --- LECTURA DEL JSON CORREGIDA ---
                         scopes = ["https://www.googleapis.com/auth/spreadsheets", "https://www.googleapis.com/auth/drive"]
                         info_credenciales = json.loads(st.secrets["gcp_json"])
+                        
+                        # --- EL ESCUDO ANTI-PEM (Arregla la llave de Google automáticamente) ---
+                        info_credenciales["private_key"] = info_credenciales["private_key"].replace('\\n', '\n')
+                        
                         credenciales = Credentials.from_service_account_info(info_credenciales, scopes=scopes)
                         cliente = gspread.authorize(credenciales)
                         
