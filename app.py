@@ -7,7 +7,7 @@ import re
 # Configuración de la página
 st.set_page_config(page_title="Productividad Emergencias ⚡", page_icon="⚡", layout="wide", initial_sidebar_state="collapsed")
 
-# --- 1. BASE DE DATOS INTEGRADA ---
+# --- 1. BASE DE DATOS INTEGRADA (AHORA SÍ, 100% COMPLETA) ---
 LISTA_CAPATACES = [
     "A. Aldonate", "A. Atoche", "A. Godoy", "A. Isuiza", "A. Torres", "A. Vigoria", 
     "A. Villanueva", "C. Hernandez", "C. Mayaudon", "C. Ñaupas", "C. Padilla", 
@@ -22,31 +22,74 @@ LISTA_CAPATACES = [
 
 DATOS_ACTIVIDADES = {
     "AP (Alumbrado Público)": [
-        {"ACTIVIDAD": "Cable en cortocircuito de AP", "PESO": 0.61},
+        {"ACTIVIDAD": "Cable en cortocircuito de AP", "PESO": 0.62},
         {"ACTIVIDAD": "Cable a tierra AP", "PESO": 0.23},
         {"ACTIVIDAD": "Cable seccionado de AP", "PESO": 0.59},
         {"ACTIVIDAD": "Cable de AP dañado por terceros", "PESO": 0.46},
+        {"ACTIVIDAD": "Red Aérea seccionada de AP", "PESO": 0.27},
+        {"ACTIVIDAD": "Red Aérea de AP Sustraída", "PESO": 0.27},
         {"ACTIVIDAD": "Cambio de fotocélula", "PESO": 0.46},
         {"ACTIVIDAD": "Retiro de luminaria", "PESO": 0.31},
-        {"ACTIVIDAD": "Cambio de Llave AP", "PESO": 0.30},
-        {"ACTIVIDAD": "Red Aérea en cortocircuito", "PESO": 0.27}
+        {"ACTIVIDAD": "Cambio de Llave AP", "PESO": 0.31},
+        {"ACTIVIDAD": "Red Aérea en cortocircuito", "PESO": 0.27},
+        {"ACTIVIDAD": "Red Aérea seccionada por intento de hurto", "PESO": 0.27},
+        {"ACTIVIDAD": "Reparación de falso contacto en red Aérea", "PESO": 0.27}
     ],
     "SP (Servicio Particular)": [
-        {"ACTIVIDAD": "Cable en cortocircuito de SP", "PESO": 0.61},
-        {"ACTIVIDAD": "Cable a Tierra/ Electrizado SP", "PESO": 0.51},
+        {"ACTIVIDAD": "Cable en cortocircuito de SP", "PESO": 0.62},
+        {"ACTIVIDAD": "Cable a Tierra/ Electrizado SP", "PESO": 0.52},
         {"ACTIVIDAD": "Cable seccionado De SP", "PESO": 0.59},
         {"ACTIVIDAD": "Cable de SP Dañado por terceros", "PESO": 0.46},
-        {"ACTIVIDAD": "Red Aérea de AP y SP Sustraída", "PESO": 0.27}
+        {"ACTIVIDAD": "Red Aérea caida De SP", "PESO": 0.27},
+        {"ACTIVIDAD": "Red Aérea caida por choque", "PESO": 0.27},
+        {"ACTIVIDAD": "Red Aérea seccionada de SP", "PESO": 0.27},
+        {"ACTIVIDAD": "Cable de Comunicación Sustraído", "PESO": 0.46},
+        {"ACTIVIDAD": "Cable de Subida Sustraído", "PESO": 0.46},
+        {"ACTIVIDAD": "Cable Subterráneo Sustraído", "PESO": 0.46},
+        {"ACTIVIDAD": "Red Aérea de AP y SP Sustraída", "PESO": 0.27},
+        {"ACTIVIDAD": "Red Aérea de SP Sustraída", "PESO": 0.27},
+        {"ACTIVIDAD": "Cable de comunicación quemado", "PESO": 0.46},
+        {"ACTIVIDAD": "Cambio de tablero de Distribución", "PESO": 0.42},
+        {"ACTIVIDAD": "Levantar Líneas de Telef, Cable u Otros", "PESO": 0.31},
+        {"ACTIVIDAD": "Retenida chocada", "PESO": 0.31},
+        {"ACTIVIDAD": "Cambio de Llave BT", "PESO": 0.31},
+        {"ACTIVIDAD": "Falso contacto disyuntor", "PESO": 0.31},
+        {"ACTIVIDAD": "Profundizar cables", "PESO": 0.31},
+        {"ACTIVIDAD": "Puenteo de Llaves AP", "PESO": 0.31},
+        {"ACTIVIDAD": "Puenteo de Llaves BT", "PESO": 0.31},
+        {"ACTIVIDAD": "Cambio de mástil", "PESO": 0.23},
+        {"ACTIVIDAD": "Instalación de Tubos en Subidas Aéreas", "PESO": 0.23},
+        {"ACTIVIDAD": "Reposición de contactor sustraído", "PESO": 0.23},
+        {"ACTIVIDAD": "Verificar tablero aéreo BT", "PESO": 0.22},
+        {"ACTIVIDAD": "Cambio de pasantes", "PESO": 0.32},
+        {"ACTIVIDAD": "Cambio de murete", "PESO": 0.31},
+        {"ACTIVIDAD": "Desoldado de tapas", "PESO": 0.31},
+        {"ACTIVIDAD": "Otros Trabajos en Cajas Tomas", "PESO": 0.31}
     ],
     "POSTES": [
         {"ACTIVIDAD": "Cambio de poste chocado (con redes)", "PESO": 0.77},
         {"ACTIVIDAD": "Cambio de poste Corroído con redes", "PESO": 0.77},
+        {"ACTIVIDAD": "Cambio de poste Corroído sin redes", "PESO": 0.77},
+        {"ACTIVIDAD": "Enderezado de postes", "PESO": 0.31},
         {"ACTIVIDAD": "Reposición de poste chocado sin redes", "PESO": 0.77},
-        {"ACTIVIDAD": "Retiro de poste chocado", "PESO": 0.31}
+        {"ACTIVIDAD": "Reposición de poste corroído sin redes", "PESO": 0.77},
+        {"ACTIVIDAD": "Retiro de poste chocado", "PESO": 0.31},
+        {"ACTIVIDAD": "Retiro de poste corroído", "PESO": 0.31}
     ],
     "CNX (Conexiones)": [
         {"ACTIVIDAD": "Conexión Subterránea quemada de AP", "PESO": 0.36},
-        {"ACTIVIDAD": "Conexión Subterránea quemada de SP", "PESO": 0.36}
+        {"ACTIVIDAD": "Conexión Subterránea quemada de SP", "PESO": 0.36},
+        {"ACTIVIDAD": "Conexión subterránea sustraído o danado", "PESO": 0.36},
+        {"ACTIVIDAD": "Retiro de conexión subterránea por seguridad", "PESO": 0.36},
+        {"ACTIVIDAD": "Instalación de conexión subterránea con compromiso de pago", "PESO": 0.31},
+        {"ACTIVIDAD": "Conexión tipo IV quemada AP", "PESO": 0.23},
+        {"ACTIVIDAD": "Conexión Tipo IV quemada SP", "PESO": 0.23},
+        {"ACTIVIDAD": "Conexión Tipo IV Sustraída Danado", "PESO": 0.23},
+        {"ACTIVIDAD": "Instalación de Conexión tipo IV con compromiso de pago", "PESO": 0.23},
+        {"ACTIVIDAD": "Reparar falso contacto en conexión tipo IV", "PESO": 0.23},
+        {"ACTIVIDAD": "Retemplado de conexión tipo IV", "PESO": 0.23},
+        {"ACTIVIDAD": "Retiro de Conexión tipo IV por seguridad", "PESO": 0.23},
+        {"ACTIVIDAD": "Conexión Tipo V quemada SP (**)", "PESO": 0.46}
     ]
 }
 
@@ -168,18 +211,15 @@ if sst_valida and circuito != "Seleccione...":
             # --- GRÁFICA DE BARRAS (MÉTODO INFALIBLE) ---
             st.write("### Comparativo de Pesos")
             
-            # Extraemos las listas de datos manualmente para evitar errores de pandas
             x_actividades = [d["Actividad"] for d in datos_para_tabla]
             y_base = [d["Peso Base"] for d in datos_para_tabla]
             y_real = [d["Peso Real"] for d in datos_para_tabla]
 
-            # Construimos la gráfica ladrillo por ladrillo
             fig_bar = go.Figure(data=[
                 go.Bar(name='Peso Base', x=x_actividades, y=y_base, marker_color='#B0BEC5'),
                 go.Bar(name='Peso Real', x=x_actividades, y=y_real, marker_color='#0288D1')
             ])
             
-            # Aplicamos el diseño
             fig_bar.update_layout(
                 barmode='group',
                 template="plotly_dark",
