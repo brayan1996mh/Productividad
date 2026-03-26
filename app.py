@@ -68,11 +68,11 @@ if seleccionadas:
     st.markdown("---")
     # 2. REPORTE DE CAMPO OPERATIVO (Layout Tabla Táctil)
     st.subheader("Paso 2: Reporte de Campo (Dinámico y Táctil)")
-    st.caption("Todas las celdas de avance están limpias (0%) para que el capataz ingrese el dato numérico. El `% Peso Real` se calcula al instante.")
+    st.caption("Ingresa el avance numérico en las casillas. El `% Peso Real` se calcula al instante.")
     
-    # Cabeceras de columna fijas tipo Tabla (como imagen 2)
-    st.write("") # Espaciador profesional
-    cH1, cH2, cH3, cH4, cH5 = st.columns([2.5, 1.5, 1.5, 1.5, 1.5]) # Proporciones de tabla dactilar
+    # Cabeceras de columna fijas tipo Tabla
+    st.write("") 
+    cH1, cH2, cH3, cH4, cH5 = st.columns([2.5, 1.5, 1.5, 1.5, 1.5]) 
     cH1.write("##### Actividad")
     cH2.write("##### Estado")
     cH3.write("##### % Peso Base")
@@ -85,35 +85,29 @@ if seleccionadas:
     # Creamos las filas compactas de la tabla
     for act in seleccionadas:
         with st.container():
-            # Cinco columnas en una sola fila (Tabla compacta)
             col1, col2, col3, col4, col5 = st.columns([2.5, 1.5, 1.5, 1.5, 1.5]) 
             
-            # Columna 1: Nombre de Actividad (Estático)
+            # Columna 1: Nombre de Actividad
             with col1:
                 st.write(f"🔧 **{act}**")
             
-            # Columna 2: Estado táctil (selectbox con opciones exactas)
+            # Columna 2: Estado táctil (Solo las 3 opciones requeridas)
             with col2:
-                # Opciones: Finalizado, Devuelto, Indebido
                 estado = st.selectbox("Estado", ["Finalizado", "Devuelto", "Indebido"], key=f"est_{act}", label_visibility="collapsed")
             
-            # Columna 3: Peso Base (Estático)
+            # Columna 3: Peso Base (Estático y bloqueado)
             with col3:
                 st.metric("% Peso Base", f"{actividades[act]}%", label_visibility="collapsed")
             
-            # Columna 4: Avance táctil (Casilla de entrada numérica en BLANCO/0% por defecto)
+            # Columna 4: Avance (Casilla en blanco/0%, solo permite números)
             with col4:
-                # Number input limitado estrictamente de 0 a 100
                 avance = st.number_input("% Avance", min_value=0, max_value=100, value=0, step=10, key=f"av_{act}", label_visibility="collapsed")
             
-            # Columna 5: Peso Obtenido (Cálculo automático en Metric compacto)
+            # Columna 5: Peso Obtenido (Cálculo automático)
             with col5:
-                # Cálculo automático en tiempo real
                 peso_real = (avance / 100.0) * actividades[act]
-                # Usamos st.metric formateado profesionalmente
                 st.metric("% Peso Real", f"{peso_real:.1f}%", help="Cálculo automático: Peso Base * % Avance / 100", label_visibility="collapsed")
             
-            # Guardamos los datos para los gráficos
             datos_reporte.append({
                 "Actividad": act,
                 "Peso Base": actividades[act],
@@ -123,16 +117,15 @@ if seleccionadas:
             })
             total_base_peso += actividades[act]
             
-    # Convertimos los datos a una tabla (DataFrame)
     df_reporte = pd.DataFrame(datos_reporte)
     
-    # 3. DASHBOARD DE CUMPLIMIENTO OPERATIVO (PROFESIONAL Y ROBUSTO)
+    # 3. DASHBOARD DE CUMPLIMIENTO (CORREGIDO)
     if not df_reporte.empty:
         st.markdown("---")
         st.subheader("Paso 3: Dashboard de Avance Operativo")
         total_peso_real = df_reporte["Peso Real"].sum()
         
-        # Gráfico 1: Medidor tipo Velocímetro Eléctrico
+        # Gráfico 1: Velocímetro (Con el error de color arreglado)
         fig_gauge = go.Figure(go.Indicator(
             mode = "gauge+number",
             value = total_peso_real,
@@ -140,45 +133,42 @@ if seleccionadas:
             title = {'text': "Avance Real Acumulado", 'font': {'size': 24, 'color': "white"}},
             gauge = {
                 'axis': {'range': [0, 150], 'tickwidth': 1, 'tickcolor': "white"},
-                'bar': {'color': "#00E676" if total_peso_real >= 100 else "#29B6F6"}, # Verde si llega a 100, azul si falta
+                'bar': {'color': "#00E676" if total_peso_real >= 100 else "#29B6F6"}, 
                 'bgcolor': "black",
                 'borderwidth': 1,
                 'bordercolor': "gray",
                 'steps': [
-                    {'range': [0, 100], 'color': "#ffebee1A"} # Zona de cumplimiento (10% opacidad)
+                    {'range': [0, 100], 'color': "rgba(255, 235, 238, 0.1)"} # <--- ¡AQUÍ ESTABA EL ERROR! Ya está solucionado.
                 ],
                 'threshold': {
                     'line': {'color': "red", 'width': 3},
                     'thickness': 0.75,
-                    'value': 100 # Meta del 100%
+                    'value': 100 
                 }
             },
             number = {'suffix': "%", 'font': {'size': 40, 'color': "white"}}
         ))
         
-        # Gráfico 2: Barras Interactivas (Planificado vs Real)
+        # Gráfico 2: Barras
         fig_bar = px.bar(
             df_reporte, x="Actividad", y=["Peso Base", "Peso Real"], 
             barmode='group', 
             labels={'value': '% Peso Diario'},
-            template="plotly_dark", # Tema oscuro para que combine
-            color_discrete_sequence=["#B0BEC5", "#0288D1"] # Gris para el plan, Azul fuerte para lo real
+            template="plotly_dark", 
+            color_discrete_sequence=["#B0BEC5", "#0288D1"] 
         )
-        # Inclina los textos para que se lean bien en móvil
         fig_bar.update_layout(xaxis_tickangle=-45, yaxis=dict(range=[0, max(120, total_peso_real)])) 
         
-        # Mostrar gráficos en columnas (50/50 en desktop, se apilan en móvil)
         colCharts1, colCharts2 = st.columns(2)
         with colCharts1:
             st.plotly_chart(fig_gauge, use_container_width=True)
         with colCharts2:
             st.plotly_chart(fig_bar, use_container_width=True)
         
-        # Resumen y Alertas (Eliminado st.balloons)
         if total_peso_real >= 100:
             st.success(f"⚡ Objetivo Cumplido: La cuadrilla alcanzó un {total_peso_real:.1f}% real acumulado.")
         else:
             st.warning(f"⚠️ Atención: Cumplimiento al {total_peso_real:.1f}%. Faltan {100 - total_peso_real:.1f}% real para cerrar la meta diaria.")
             
 else:
-    st.info("👆 Selecciona los trabajos programados en la lista desplegable superior para iniciar el reporte táctil.")
+    st.info("👆 Selecciona los trabajos programados en la lista desplegable superior para iniciar el reporte.")
