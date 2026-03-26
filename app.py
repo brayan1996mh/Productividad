@@ -66,18 +66,15 @@ if sst_valida and circuito != "Seleccione...":
                 estado = col1.selectbox("Estado", ["Seleccione...", "Finalizado", "Devuelto", "Pendiente"], key=f"e_{act}")
                 col2.text_input("Peso Base", value=f"{peso_base}%", disabled=True, key=f"b_{act}")
                 
-                # LA LÓGICA DE AUTOMATIZACIÓN (El usuario trabaja menos)
-                if estado == "Finalizado":
-                    val_defecto = 100
-                elif estado in ["Devuelto", "Pendiente"]:
-                    val_defecto = 0
+                # Caja limpia, sin lógicas de relleno automático. Obliga a presionar Enter.
+                avance = col3.number_input("Avance (%)", min_value=0, max_value=100, value=None, step=10, placeholder="Ej: 100 (Presiona Enter)", key=f"a_{act}")
+                
+                # Cálculo robusto y directo
+                if avance is not None:
+                    peso_real = (float(avance) / 100.0) * float(peso_base)
                 else:
-                    val_defecto = None
-                
-                avance = col3.number_input("Avance (%)", min_value=0, max_value=100, value=val_defecto, step=10, placeholder="Ej: 100", key=f"a_{act}", format="%d")
-                
-                peso_real = (avance / 100) * peso_base if avance is not None else 0.0
-                
+                    peso_real = 0.0
+                    
                 col4.text_input("Peso Real", value=f"{peso_real:.2f}%", disabled=True, key=f"r_{act}")
                 
                 datos_reporte.append({"Act": act, "Base": peso_base, "Real": peso_real})
