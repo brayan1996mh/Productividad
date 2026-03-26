@@ -9,7 +9,7 @@ st.set_page_config(page_title="Productividad Emergencias ⚡", page_icon="⚡", 
 # 1. ESTILO PROFESIONAL Y SUBTIL (CSS)
 styl = f"""
 <style>
-    /* Estilo para el fondo (Background de esquemas eléctricos sutil) */
+    /* Estilo para el fondo */
     .stApp {{
         background-image: linear-gradient(180deg, rgba(0,0,0,0.85) 0%, rgba(10,30,50,0.92) 100%), 
                           url('data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIzMDAnIGhlaWdodD0iMzAwIiB2aWV3Qm94PSIwIDAgMzAwIDMwMCI+PHBhdGggZD0iTTAgMGgzMDB2MzAwSDB6IiBmaWxsPSJub25lIi8+PHBhdGggZD0iTTEwMCAxMDBoMTB2MTBoLTEwek0xNDAgMTAwaDEwdjEwaC0xMHpNMTgwIDEwMGgxMHYxMGgtMTB6TTIwMCAxMDBoMTB2MTBoLTEwek0yNDAgMTAwaDEwdjEwaC0xMHpNMTAwIDE0MGgxMHYxMGgtMTB6TTE4MCAxNDBoMTB2MTBoLTEwek0yMDAgMTQwaDEwdjEwaC0xMHpNMjQwIDE0MGgxMHYxMGgtMTB6TTEwMCAxODB4MTB2MTBoLTEwek0xNDAgMTgwSDB2LTE5NjhIMHoiIGZpbGw9Im5vbmUiLz48cGF0aCBkPSJNMCAwYzIuNDU4IDAgNC45MjEuMTM5IDcuMzc1LjQwOEw5Ny43MjUgOTEuMTVMMTYyLjcwNSA5M3MyNDUuNTQxIDExOC4wNjcgMjc4LjY5OCAxNTkuNjUyQzE1MC40MDQgMTg5LjY4IDkwLjgzMiAyNDkuMjUyIDAgMzAwY0MgLTQ4Ljg5OCA0MC43MDcgLTg4Ljc4NyA4OC43ODcgLTg4Ljc4N2MxNC44NDYgMCAyOS4wMTQgMy45MzggNDEuNzY0IDEwLjc3OEM3Ny43MDkgMTkyLjc5NCA0MC43MDcgMTU2LjAwNCAwIDM4NS43NEMwIDMwMCAtNDUuNzA5IDI3OS4wMzYgLTk1LjUzMSAyMzY4LjU4NEMxNzYuOTczIDI0NS41NDEgMjUuNTQxIDk1LjMzMSB6IiBmaWxsPSIjMDcwMDNiMjMiLz48L3N2Zz4=');
@@ -23,14 +23,12 @@ styl = f"""
         margin-top: -10px !important;
         margin-bottom: 2px !important;
     }}
-
-    /* Estilo profesional para métricas */
-    [data-testid="stMetricValue"] {{
-        font-size: 1.5rem !important;
+    
+    /* Para que el texto dentro de las casillas bloqueadas sea bien visible */
+    input:disabled {{
         color: #00E676 !important;
-    }}
-    [data-testid="stMetricLabel"] {{
-        font-size: 0.9rem !important;
+        -webkit-text-fill-color: #00E676 !important;
+        font-weight: bold;
     }}
 </style>
 """
@@ -68,41 +66,33 @@ if seleccionadas:
     # 2. MATRIZ DE PRODUCTIVIDAD
     st.subheader("Matríz de Productividad")
     
-    # Cabeceras de columna (ahora son 4 columnas porque el título de actividad va arriba)
-    st.write("") 
-    cH1, cH2, cH3, cH4 = st.columns(4) 
-    cH1.write("##### Estado")
-    cH2.write("##### % Peso Base")
-    cH3.write("##### % Avance (0-100)")
-    cH4.write("##### % Peso Real")
-    
     datos_reporte = []
     
-    # Creamos las filas compactas
+    # Creamos las filas
     for act in seleccionadas:
         with st.container():
-            # Título de la actividad EN LA PARTE DE ARRIBA (Libera espacio horizontal)
+            # Título de la actividad EN LA PARTE DE ARRIBA
             st.write(f"### 🔧 {act}")
             
-            # Ahora usamos solo 4 columnas para los controles
+            # 4 columnas exactas
             col1, col2, col3, col4 = st.columns(4) 
             
-            # Columna 1: Estado (Solo las 3 opciones)
+            # Columna 1: Estado (Inicia en blanco, con título integrado)
             with col1:
-                estado = st.selectbox("Estado", ["Finalizado", "Devuelto", "Indebido"], key=f"est_{act}", label_visibility="collapsed")
+                estado = st.selectbox("Estado", ["", "Finalizado", "Devuelto", "Indebido"], key=f"est_{act}")
             
-            # Columna 2: Peso Base (Estático)
+            # Columna 2: Peso Base (Ahora es una casilla deshabilitada, con título integrado)
             with col2:
-                st.metric("% Peso Base", f"{actividades[act]}%", label_visibility="collapsed")
+                st.text_input("% Peso Base", value=f"{actividades[act]}%", disabled=True, key=f"base_{act}")
             
-            # Columna 3: Avance (Casilla numérica que empieza en 0)
+            # Columna 3: Avance (Casilla numérica, con título integrado)
             with col3:
-                avance = st.number_input("% Avance", min_value=0, max_value=100, value=0, step=10, key=f"av_{act}", label_visibility="collapsed")
+                avance = st.number_input("% Avance (0-100)", min_value=0, max_value=100, value=0, step=10, key=f"av_{act}")
             
-            # Columna 4: Peso Obtenido (Calculado)
+            # Columna 4: Peso Obtenido (Ahora es una casilla deshabilitada, con título integrado)
             with col4:
                 peso_real = (avance / 100.0) * actividades[act]
-                st.metric("% Peso Real", f"{peso_real:.1f}%", label_visibility="collapsed")
+                st.text_input("% Peso Real", value=f"{peso_real:.1f}%", disabled=True, key=f"real_{act}")
             
             # Línea separadora entre actividades
             st.markdown("<hr style='margin-top: 5px; margin-bottom: 15px;'>", unsafe_allow_html=True)
@@ -122,7 +112,7 @@ if seleccionadas:
         st.subheader("Dashboard de Avance de Producción")
         total_peso_real = df_reporte["Peso Real"].sum()
         
-        # Gráfico 1: Velocímetro (Error corregido)
+        # Gráfico 1: Velocímetro
         fig_gauge = go.Figure(go.Indicator(
             mode = "gauge+number",
             value = total_peso_real,
