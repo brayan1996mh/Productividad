@@ -4,240 +4,172 @@ import plotly.graph_objects as go
 from datetime import date
 import re
 
-# Configuración de la página
-st.set_page_config(page_title="Productividad Emergencias ⚡", page_icon="⚡", layout="wide", initial_sidebar_state="collapsed")
+# --- CONFIGURACIÓN ---
+st.set_page_config(
+    page_title="⚡ Productividad Emergencias",
+    page_icon="⚡",
+    layout="wide"
+)
 
-# --- 1. BASE DE DATOS INTEGRADA ---
+# --- DATA ---
 LISTA_CAPATACES = [
-    "A. Aldonate", "A. Atoche", "A. Godoy", "A. Isuiza", "A. Torres", "A. Vigoria", 
-    "A. Villanueva", "C. Hernandez", "C. Mayaudon", "C. Ñaupas", "C. Padilla", 
-    "C. Salcedo", "D. Delgado", "D. Taquiri", "E. Ancco", "E. Antay", "E. Chihuan", 
-    "E. Diaz", "E. Flores", "E. La rosa", "F. Lozano", "F. Ramos", "H. Cabrera", 
-    "J. Abanto", "J. Apaza", "J. Arotinco", "J. Delgado", "J. Huari", "J. Panaifo", 
-    "J. Parra", "J. Salvador", "J. Suarez", "J. Villanueva", "L. Angeles", "L. Ayala", 
-    "L. Fiore", "M. Barrantes", "N. Pauro", "O. Aguilar", "P. Capcha", "R. Albites", 
-    "R. Rojas", "R. Torres", "S. Jacinto", "S. Lazaro", "V. Bordon", "V. Campos", 
-    "V. Orrillo", "V. Pérez", "V. Torres", "Y. Padilla"
+    "A. Aldonate","A. Atoche","A. Godoy","A. Isuiza","A. Torres","A. Vigoria",
+    "A. Villanueva","C. Hernandez","C. Mayaudon","C. Ñaupas","C. Padilla",
+    "C. Salcedo","D. Delgado","D. Taquiri","E. Ancco","E. Antay","E. Chihuan",
+    "E. Diaz","E. Flores","E. La rosa","F. Lozano","F. Ramos","H. Cabrera",
+    "J. Abanto","J. Apaza","J. Arotinco","J. Delgado","J. Huari","J. Panaifo",
+    "J. Parra","J. Salvador","J. Suarez","J. Villanueva","L. Angeles","L. Ayala",
+    "L. Fiore","M. Barrantes","N. Pauro","O. Aguilar","P. Capcha","R. Albites",
+    "R. Rojas","R. Torres","S. Jacinto","S. Lazaro","V. Bordon","V. Campos",
+    "V. Orrillo","V. Pérez","V. Torres","Y. Padilla"
 ]
 
 DATOS_ACTIVIDADES = {
-    "AP (Alumbrado Público)": [
+    "AP": [
         {"ACTIVIDAD": "Cable en cortocircuito de AP", "PESO": 0.62},
         {"ACTIVIDAD": "Cable a tierra AP", "PESO": 0.23},
-        {"ACTIVIDAD": "Cable seccionado de AP", "PESO": 0.59},
-        {"ACTIVIDAD": "Cable de AP dañado por terceros", "PESO": 0.46},
-        {"ACTIVIDAD": "Red Aérea seccionada de AP", "PESO": 0.27},
-        {"ACTIVIDAD": "Red Aérea de AP Sustraída", "PESO": 0.27},
         {"ACTIVIDAD": "Cambio de fotocélula", "PESO": 0.46},
         {"ACTIVIDAD": "Retiro de luminaria", "PESO": 0.31},
-        {"ACTIVIDAD": "Cambio de Llave AP", "PESO": 0.31},
-        {"ACTIVIDAD": "Red Aérea en cortocircuito", "PESO": 0.27},
-        {"ACTIVIDAD": "Red Aérea seccionada por intento de hurto", "PESO": 0.27},
-        {"ACTIVIDAD": "Reparación de falso contacto en red Aérea", "PESO": 0.27}
     ],
-    "SP (Servicio Particular)": [
+    "SP": [
         {"ACTIVIDAD": "Cable en cortocircuito de SP", "PESO": 0.62},
-        {"ACTIVIDAD": "Cable a Tierra/ Electrizado SP", "PESO": 0.52},
-        {"ACTIVIDAD": "Cable seccionado De SP", "PESO": 0.59},
-        {"ACTIVIDAD": "Cable de SP Dañado por terceros", "PESO": 0.46},
-        {"ACTIVIDAD": "Red Aérea caida De SP", "PESO": 0.27},
-        {"ACTIVIDAD": "Red Aérea caida por choque", "PESO": 0.27},
-        {"ACTIVIDAD": "Red Aérea seccionada de SP", "PESO": 0.27},
-        {"ACTIVIDAD": "Cable de Comunicación Sustraído", "PESO": 0.46},
-        {"ACTIVIDAD": "Cable de Subida Sustraído", "PESO": 0.46},
-        {"ACTIVIDAD": "Cable Subterráneo Sustraído", "PESO": 0.46},
-        {"ACTIVIDAD": "Red Aérea de AP y SP Sustraída", "PESO": 0.27},
-        {"ACTIVIDAD": "Red Aérea de SP Sustraída", "PESO": 0.27},
-        {"ACTIVIDAD": "Cable de comunicación quemado", "PESO": 0.46},
-        {"ACTIVIDAD": "Cambio de tablero de Distribución", "PESO": 0.42},
-        {"ACTIVIDAD": "Levantar Líneas de Telef, Cable u Otros", "PESO": 0.31},
-        {"ACTIVIDAD": "Retenida chocada", "PESO": 0.31},
-        {"ACTIVIDAD": "Cambio de Llave BT", "PESO": 0.31},
-        {"ACTIVIDAD": "Falso contacto disyuntor", "PESO": 0.31},
-        {"ACTIVIDAD": "Profundizar cables", "PESO": 0.31},
-        {"ACTIVIDAD": "Puenteo de Llaves AP", "PESO": 0.31},
-        {"ACTIVIDAD": "Puenteo de Llaves BT", "PESO": 0.31},
-        {"ACTIVIDAD": "Cambio de mástil", "PESO": 0.23},
-        {"ACTIVIDAD": "Instalación de Tubos en Subidas Aéreas", "PESO": 0.23},
-        {"ACTIVIDAD": "Reposición de contactor sustraído", "PESO": 0.23},
-        {"ACTIVIDAD": "Verificar tablero aéreo BT", "PESO": 0.22},
-        {"ACTIVIDAD": "Cambio de pasantes", "PESO": 0.32},
-        {"ACTIVIDAD": "Cambio de murete", "PESO": 0.31},
-        {"ACTIVIDAD": "Desoldado de tapas", "PESO": 0.31},
-        {"ACTIVIDAD": "Otros Trabajos en Cajas Tomas", "PESO": 0.31}
-    ],
-    "POSTES": [
-        {"ACTIVIDAD": "Cambio de poste chocado (con redes)", "PESO": 0.77},
-        {"ACTIVIDAD": "Cambio de poste Corroído con redes", "PESO": 0.77},
-        {"ACTIVIDAD": "Cambio de poste Corroído sin redes", "PESO": 0.77},
-        {"ACTIVIDAD": "Enderezado de postes", "PESO": 0.31},
-        {"ACTIVIDAD": "Reposición de poste chocado sin redes", "PESO": 0.77},
-        {"ACTIVIDAD": "Reposición de poste corroído sin redes", "PESO": 0.77},
-        {"ACTIVIDAD": "Retiro de poste chocado", "PESO": 0.31},
-        {"ACTIVIDAD": "Retiro de poste corroído", "PESO": 0.31}
-    ],
-    "CNX (Conexiones)": [
-        {"ACTIVIDAD": "Conexión Subterránea quemada de AP", "PESO": 0.36},
-        {"ACTIVIDAD": "Conexión Subterránea quemada de SP", "PESO": 0.36},
-        {"ACTIVIDAD": "Conexión subterránea sustraído o danado", "PESO": 0.36},
-        {"ACTIVIDAD": "Retiro de conexión subterránea por seguridad", "PESO": 0.36},
-        {"ACTIVIDAD": "Instalación de conexión subterránea con compromiso de pago", "PESO": 0.31},
-        {"ACTIVIDAD": "Conexión tipo IV quemada AP", "PESO": 0.23},
-        {"ACTIVIDAD": "Conexión Tipo IV quemada SP", "PESO": 0.23},
-        {"ACTIVIDAD": "Conexión Tipo IV Sustraída Danado", "PESO": 0.23},
-        {"ACTIVIDAD": "Instalación de Conexión tipo IV con compromiso de pago", "PESO": 0.23},
-        {"ACTIVIDAD": "Reparar falso contacto en conexión tipo IV", "PESO": 0.23},
-        {"ACTIVIDAD": "Retemplado de conexión tipo IV", "PESO": 0.23},
-        {"ACTIVIDAD": "Retiro de Conexión tipo IV por seguridad", "PESO": 0.23},
-        {"ACTIVIDAD": "Conexión Tipo V quemada SP (**)", "PESO": 0.46}
+        {"ACTIVIDAD": "Cable a Tierra SP", "PESO": 0.52},
+        {"ACTIVIDAD": "Cambio de tablero", "PESO": 0.42},
     ]
 }
 
-# --- 2. ESTILO VISUAL (FONDO OPERACIONAL) ---
-styl = f"""
+# --- ESTILO ---
+st.markdown("""
 <style>
-    .stApp {{
-        background-image: linear-gradient(180deg, rgba(5, 15, 25, 0.85) 0%, rgba(5, 10, 15, 0.95) 100%), 
-                          url('https://images.unsplash.com/photo-1621905251189-08b45d6a269e?q=80&w=2000&auto=format&fit=crop');
-        background-size: cover;
-        background-position: center;
-        background-attachment: fixed;
-    }}
-    
-    .stMarkdown, .stSubheader, .stTitle {{
-        margin-top: -10px !important;
-        margin-bottom: 2px !important;
-        text-shadow: 1px 1px 3px black;
-    }}
-    
-    input:disabled {{
-        color: #00E676 !important;
-        -webkit-text-fill-color: #00E676 !important;
-        font-weight: bold;
-        background-color: rgba(0, 230, 118, 0.1) !important;
-        border: 1px solid #00E676;
-    }}
-    
-    .stNumberInput div[data-baseweb="input"] input {{
-        color: #29B6F6 !important;
-        font-weight: bold;
-    }}
+.stApp {
+    background: linear-gradient(180deg,#0b1c2c,#050a0f);
+}
+.estado-ok {color:#00E676;font-weight:bold;}
+.estado-mal {color:#FF5252;font-weight:bold;}
+.estado-mid {color:#FFD54F;font-weight:bold;}
 </style>
-"""
-st.markdown(styl, unsafe_allow_html=True)
+""", unsafe_allow_html=True)
 
-st.title("⚡ Control de Productividad Emergencias")
-st.markdown("---")
+# --- HEADER ---
+st.title("⚡ Control de Productividad")
 
-# --- 3. SELECCIÓN DE DATOS ---
-st.subheader("Datos Generales")
-c1, c2 = st.columns(2)
-fecha = c1.date_input("FECHA", value=date.today())
-sst_input = c2.text_input("SST")
+# --- INPUTS ---
+col1, col2 = st.columns(2)
+fecha = col1.date_input("Fecha", value=date.today())
+sst = col2.text_input("SST")
 
-sst_valida = False
-if sst_input:
-    if re.match(r'^\d{7}$', sst_input):
-        sst_valida = True
+valida_sst = bool(re.match(r'^\d{7}$', sst)) if sst else False
 
-c3, c4 = st.columns(2)
-capataz = c3.selectbox("CAPATAZ", ["Seleccione..."] + LISTA_CAPATACES)
-circuito = c4.selectbox("CIRCUITO / SECTOR", ["Seleccione..."] + list(DATOS_ACTIVIDADES.keys()))
+col3, col4 = st.columns(2)
+capataz = col3.selectbox("Capataz", ["Seleccione"] + LISTA_CAPATACES)
+circuito = col4.selectbox("Circuito", ["Seleccione"] + list(DATOS_ACTIVIDADES.keys()))
 
-st.markdown("---")
+st.divider()
 
-if sst_valida and circuito != "Seleccione...":
-    st.subheader(f"Actividades: {circuito}")
-    opciones_act = [a["ACTIVIDAD"] for a in DATOS_ACTIVIDADES[circuito]]
-    seleccion = st.multiselect("Agregar trabajos:", opciones_act, label_visibility="collapsed")
+# --- VALIDACIÓN ---
+if not valida_sst and sst:
+    st.warning("⚠️ SST inválida (7 dígitos)")
+elif valida_sst and circuito != "Seleccione":
+
+    actividades = DATOS_ACTIVIDADES[circuito]
+    nombres = [a["ACTIVIDAD"] for a in actividades]
+
+    seleccion = st.multiselect("Actividades", nombres)
 
     if seleccion:
-        st.markdown("---")
-        st.subheader("Matriz de Avance")
-        
-        datos_para_tabla = []
-        for nombre_act in seleccion:
-            # LÓGICA ANTI-ERRORES: Busca "PESO", "Peso" o "peso". Así nunca va a fallar.
-            peso_base = 0.0
-            for item in DATOS_ACTIVIDADES[circuito]:
-                if item.get("ACTIVIDAD") == nombre_act:
-                    peso_base = item.get("PESO", item.get("Peso", item.get("peso", 0.0)))
-                    break
-            
-            with st.container():
-                st.write(f"### 🔧 {nombre_act}")
-                col1, col2, col3, col4 = st.columns(4)
-                
-                with col1:
-                    estado = st.selectbox("Estado", ["Finalizado", "Devuelto", "Pendiente"], key=f"est_{nombre_act}")
-                with col2:
-                    st.text_input("Peso Base", value=f"{peso_base}%", disabled=True, key=f"pb_{nombre_act}")
-                with col3:
-                    avance = st.number_input("Avance (%)", 0, 100, 100, 10, key=f"av_{nombre_act}", format="%d%%")
-                with col4:
-                    peso_real = (avance / 100) * peso_base
-                    st.text_input("Peso Real", value=f"{peso_real:.2f}%", disabled=True, key=f"pr_{nombre_act}")
-                
-                datos_para_tabla.append({
-                    "Actividad": nombre_act, 
-                    "Peso Base": peso_base, 
-                    "Peso Real": peso_real
-                })
-                st.markdown("---")
+        st.subheader("📊 Matriz de Avance")
 
-        # --- 4. DASHBOARD ---
-        if datos_para_tabla:
-            total_p = sum(d["Peso Real"] for d in datos_para_tabla)
-            
-            col_gauge, col_info = st.columns([2, 1])
-            
-            with col_gauge:
-                fig_gauge = go.Figure(go.Indicator(
-                    mode = "gauge+number",
-                    value = total_p,
-                    title = {'text': "Producción Total (%)", 'font': {'color': "white"}},
-                    gauge = {
-                        'axis': {'range': [0, 120], 'tickcolor': "white"},
-                        'bar': {'color': "#00E676" if total_p >= 100 else "#FFEB3B"},
-                        'threshold': {'line': {'color': "red", 'width': 4}, 'thickness': 0.75, 'value': 100}
-                    }
-                ))
-                fig_gauge.update_layout(paper_bgcolor='rgba(0,0,0,0)', font={'color': "white"}, height=350)
-                st.plotly_chart(fig_gauge, use_container_width=True)
+        resultados = []
 
-            with col_info:
-                st.metric("Puntaje Total", f"{total_p:.2f}%")
-                if total_p >= 100:
-                    st.success("✅ Objetivo Cumplido")
-                else:
-                    st.info(f"Falta {(100-total_p):.2f}%")
+        for act in seleccion:
+            peso = next(a["PESO"] for a in actividades if a["ACTIVIDAD"] == act)
 
-            # --- GRÁFICA DE BARRAS DIRECTA ---
-            st.write("### Comparativo de Pesos")
-            
-            x_actividades = [d["Actividad"] for d in datos_para_tabla]
-            y_base = [d["Peso Base"] for d in datos_para_tabla]
-            y_real = [d["Peso Real"] for d in datos_para_tabla]
+            col1, col2, col3, col4, col5 = st.columns([3,1,1,1,1])
 
-            fig_bar = go.Figure(data=[
-                go.Bar(name='Peso Base', x=x_actividades, y=y_base, marker_color='#B0BEC5'),
-                go.Bar(name='Peso Real', x=x_actividades, y=y_real, marker_color='#0288D1')
-            ])
-            
-            fig_bar.update_layout(
-                barmode='group',
-                template="plotly_dark",
-                plot_bgcolor='rgba(0,0,0,0)',
-                paper_bgcolor='rgba(0,0,0,0)',
-                xaxis_tickangle=-45,
-                xaxis_title="Actividad",
-                yaxis_title="Porcentaje (%)",
-                legend_title_text="Tipo de Peso"
-            )
-            
-            st.plotly_chart(fig_bar, use_container_width=True)
+            with col1:
+                st.write(f"🔧 {act}")
 
-elif sst_input and not sst_valida:
-    st.warning("⚠️ La SST debe contener exactamente 7 números para habilitar la matriz.")
+            with col2:
+                estado = st.selectbox("Estado", ["Finalizado","Devuelto","Pendiente"], key=act)
+
+            with col3:
+                st.write(f"{peso*100:.0f}%")
+
+            with col4:
+                avance = st.number_input(
+                    "Avance",
+                    min_value=0,
+                    max_value=100,
+                    value=100,
+                    step=10,
+                    key=f"av_{act}"
+                )
+
+            peso_real = (avance/100) * peso
+
+            with col5:
+                st.write(f"{peso_real*100:.2f}%")
+
+            # COLOR SEGÚN ESTADO
+            if estado == "Finalizado":
+                st.markdown('<span class="estado-ok">✔ Finalizado</span>', unsafe_allow_html=True)
+            elif estado == "Devuelto":
+                st.markdown('<span class="estado-mal">✖ Devuelto</span>', unsafe_allow_html=True)
+            else:
+                st.markdown('<span class="estado-mid">⏳ Pendiente</span>', unsafe_allow_html=True)
+
+            resultados.append({
+                "Actividad": act,
+                "Base": peso*100,
+                "Real": peso_real*100
+            })
+
+            st.divider()
+
+        # --- MÉTRICAS ---
+        df = pd.DataFrame(resultados)
+        total = df["Real"].sum()
+
+        colA, colB, colC = st.columns(3)
+
+        colA.metric("Producción Total", f"{total:.2f}%")
+
+        if total >= 100:
+            colB.success("✅ Cumplido")
+        elif total >= 70:
+            colB.warning("⚠️ En progreso")
+        else:
+            colB.error("❌ Bajo")
+
+        colC.metric("Actividades", len(df))
+
+        # --- ALERTA INTELIGENTE ---
+        if total < 50:
+            st.error("🚨 Riesgo crítico de incumplimiento")
+        elif total < 80:
+            st.warning("⚠️ Riesgo moderado")
+
+        # --- GAUGE ---
+        fig = go.Figure(go.Indicator(
+            mode="gauge+number",
+            value=total,
+            title={'text': "Avance Total"},
+            gauge={
+                'axis': {'range': [0, 120]},
+                'bar': {'color': "green" if total>=100 else "orange"},
+                'threshold': {'value':100}
+            }
+        ))
+        st.plotly_chart(fig, use_container_width=True)
+
+        # --- BARRAS ---
+        fig2 = go.Figure([
+            go.Bar(name="Base", x=df["Actividad"], y=df["Base"]),
+            go.Bar(name="Real", x=df["Actividad"], y=df["Real"])
+        ])
+
+        fig2.update_layout(barmode="group")
+        st.plotly_chart(fig2, use_container_width=True)
+
 else:
-    st.info("💡 Ingrese la SST (7 números exactos) y seleccione el circuito para comenzar.")
+    st.info("👉 Ingresa SST válida y selecciona circuito")
