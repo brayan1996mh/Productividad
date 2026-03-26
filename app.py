@@ -66,11 +66,9 @@ st.markdown("---")
 st.subheader("Datos Generales")
 c1, c2 = st.columns(2)
 fecha = c1.date_input("FECHA", value=date.today())
-
-# CAMPO SST LIMPIO
 sst_input = c2.text_input("SST")
 
-# LÓGICA: Se activa solo si son exactamente 7 caracteres y todos son números
+# Lógica de validación
 sst_valida = sst_input.isnumeric() and len(sst_input) == 7
 
 c3, c4 = st.columns(2)
@@ -90,6 +88,7 @@ if sst_valida and circuito != "Seleccione...":
         
         datos_finales = []
         for nombre_act in seleccion:
+            # Buscamos el peso correspondiente a la actividad
             peso_base = next(item["PESO"] for item in DATOS_ACTIVIDADES[circuito] if item["ACTIVIDAD"] == nombre_act)
             
             with st.container():
@@ -106,35 +105,51 @@ if sst_valida and circuito != "Seleccione...":
                     peso_real = (avance / 100) * peso_base
                     st.text_input("Peso Real", value=f"{peso_real:.2f}%", disabled=True, key=f"pr_{nombre_act}")
                 
-                datos_finales.append({"Act": nombre_act, "Real": peso_real})
+                # ESTA ES LA LÍNEA QUE ARREGLA EL ERROR (añadido "Base": peso_base)
+                datos_finales.append({"Act": nombre_act, "Real": peso_real, "Base": peso_base})
                 st.markdown("---")
 
-        # --- DASHBOARD ---
-        total_p = sum(d["Real"] for d in datos_finales)
-        col_gauge, col_info = st.columns([2, 1])
-        
-        with col_gauge:
-            fig = go.Figure(go.Indicator(
-                mode = "gauge+number",
-                value = total_p,
-                title = {'text': "Producción Total", 'font': {'color': "white"}},
-                gauge = {
-                    'axis': {'range': [0, 120], 'tickcolor': "white"},
-                    'bar': {'color': "#00E676" if total_p >= 100 else "#FFEB3B"},
-                    'threshold': {'line': {'color': "red", 'width': 4}, 'thickness': 0.75, 'value': 100}
-                }
-            ))
-            fig.update_layout(paper_bgcolor='rgba(0,0,0,0)', font={'color': "white"}, height=350)
-            st.plotly_chart(fig, use_container_width=True)
+        # --- 4. DASHBOARD ---
+        if datos_finales:
+            total_p = sum(d["Real"] for d in datos_finales)
+            
+            # Crear DataFrame para la gráfica de barras
+            df_plot = pd.DataFrame(datos_finales)
+            
+            col_gauge, col_info = st.columns([2, 1])
+            
+            with col_gauge:
+                fig = go.Figure(go.Indicator(
+                    mode = "gauge+number",
+                    value = total_p,
+                    title = {'text': "Producción Total", 'font': {'color': "white"}},
+                    gauge = {
+                        'axis': {'range': [0, 120], 'tickcolor': "white"},
+                        'bar': {'color': "#00E676" if total_p >= 100 else "#FFEB3B"},
+                        'threshold': {'line': {'color': "red", 'width': 4}, 'thickness': 0.75, 'value': 100}
+                    }
+                ))
+                fig.update_layout(paper_bgcolor='rgba(0,0,0,0)', font={'color': "white"}, height=350)
+                st.plotly_chart(fig, use_container_width=True)
 
-        with col_info:
-            st.metric("Puntaje Total", f"{total_p:.2f}%")
-            if total_p >= 100:
-                st.success("✅ Objetivo Cumplido")
-            else:
-                st.info(f"Falta {(100-total_p):.2f}%")
+            with col_info:
+                st.metric("Puntaje Total", f"{total_p:.2f}%")
+                if total_p >= 100:
+                    st.success("✅ Objetivo Cumplido")
+                else:
+                    st.info(f"Falta {(100-total_p):.2f}%")
+            
+            # Gráfica comparativa de barras
+            fig_bar = px.bar(
+                df_plot, x="Act", y=["Base", "Real"], 
+                barmode='group', 
+                title="Comparativo: Peso Base vs Real",
+                labels={'value': '% Peso', 'Act': 'Actividad', 'variable': 'Tipo'},
+                template="plotly_dark"
+            )
+            st.plotly_chart(fig_bar, use_container_width=True)
 
 elif sst_input and not sst_valida:
-    st.warning("⚠️ La SST debe contener exactamente 7 números para continuar.")
+    st.warning("⚠️ La SST debe contener exactamente 7 números.")
 else:
     st.info("💡 Complete la SST (7 números) y el circuito para habilitar el registro.")
