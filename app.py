@@ -36,8 +36,9 @@ st.markdown(styl, unsafe_allow_html=True)
 @st.cache_data
 def cargar_datos():
     try:
+        # AQUI ESTÁN LOS NOMBRES EXACTOS DE TUS ARCHIVOS
         df_act = pd.read_csv('Actividades emergencias.xlsx - Hoja1.csv')
-        df_cap = pd.read_csv('Capatazadsd.xlsx - Hoja1.csv')
+        df_cap = pd.read_csv('Capataces Emergencias.xlsx - Hoja1.csv')
         
         # Normalizar nombres de columnas a mayúsculas
         df_act.columns = df_act.columns.str.strip().str.upper()
@@ -62,10 +63,10 @@ st.title("⚡ Tablero de Control de Productividad - Emergencias")
 st.markdown("---")
 
 if df_act is None:
-    st.error("⚠️ No se encontraron los archivos CSV. Sube los archivos 'Actividades emergencias.xlsx - Hoja1.csv' y 'Capatazadsd.xlsx - Hoja1.csv' a tu repositorio de GitHub.")
+    st.error("⚠️ No se encontraron los archivos CSV. Por favor, sube 'Actividades emergencias.xlsx - Hoja1.csv' y 'Capataces Emergencias.xlsx - Hoja1.csv' a tu GitHub.")
     st.stop()
 
-# 3. ENCABEZADO: DATOS DEL REPORTE (Estructura de Imagen 2)
+# 3. ENCABEZADO: DATOS DEL REPORTE
 st.subheader("Datos Generales")
 col_f, col_s = st.columns(2)
 fecha_seleccionada = col_f.date_input("FECHA", value=date.today())
@@ -106,9 +107,8 @@ if circuito_seleccionado != "Seleccione un circuito...":
             with st.container():
                 st.write(f"### 🔧 {act}")
                 
-                # Obtener el peso base de la tabla filtrada
+                # Obtener el peso base
                 peso_base_val = actividades_filtradas[actividades_filtradas[col_actividad] == act][col_peso].values[0]
-                # Limpiar el valor por si viene con el símbolo % en el Excel
                 if isinstance(peso_base_val, str):
                     peso_base_val = float(peso_base_val.replace('%', '').strip())
                 
@@ -118,7 +118,6 @@ if circuito_seleccionado != "Seleccione un circuito...":
                     estado = st.selectbox("Estado", ["", "Finalizado", "Devuelto", "Indebido"], key=f"est_{act}")
                 
                 with col2:
-                    # Input estático sin "key" para evitar bloqueos
                     st.text_input("% Peso Base", value=f"{peso_base_val}%", disabled=True, key=f"base_{act}")
                 
                 with col3:
@@ -126,7 +125,7 @@ if circuito_seleccionado != "Seleccione un circuito...":
                 
                 with col4:
                     peso_real = (avance / 100.0) * float(peso_base_val)
-                    # AQUÍ ESTÁ LA MAGIA: Al no poner un 'key', forzamos a Streamlit a actualizar este visual en tiempo real
+                    # Casilla sin key para forzar actualización dinámica en Streamlit
                     st.text_input("% Peso Real", value=f"{peso_real:.1f}%", disabled=True)
                 
                 st.markdown("<hr style='margin-top: 5px; margin-bottom: 15px;'>", unsafe_allow_html=True)
