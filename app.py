@@ -1,7 +1,6 @@
 import streamlit as st
 import pandas as pd
 import plotly.graph_objects as go
-import plotly.express as px
 from datetime import date
 import re
 
@@ -166,25 +165,32 @@ if sst_valida and circuito != "Seleccione...":
                 else:
                     st.info(f"Falta {(100-total_p):.2f}%")
 
-            # --- GRÁFICA DE BARRAS DIRECTA Y ROBUSTA ---
+            # --- GRÁFICA DE BARRAS (MÉTODO INFALIBLE) ---
             st.write("### Comparativo de Pesos")
-            df_plot = pd.DataFrame(datos_para_tabla)
             
-            # Graficamos directamente sin usar funciones complejas que mareen al servidor
-            fig_bar = px.bar(
-                df_plot, 
-                x="Actividad", 
-                y=["Peso Base", "Peso Real"], 
-                barmode="group",
-                labels={"value": "Porcentaje (%)", "variable": "Tipo de Peso"},
-                template="plotly_dark",
-                color_discrete_sequence=["#B0BEC5", "#0288D1"]
-            )
+            # Extraemos las listas de datos manualmente para evitar errores de pandas
+            x_actividades = [d["Actividad"] for d in datos_para_tabla]
+            y_base = [d["Peso Base"] for d in datos_para_tabla]
+            y_real = [d["Peso Real"] for d in datos_para_tabla]
+
+            # Construimos la gráfica ladrillo por ladrillo
+            fig_bar = go.Figure(data=[
+                go.Bar(name='Peso Base', x=x_actividades, y=y_base, marker_color='#B0BEC5'),
+                go.Bar(name='Peso Real', x=x_actividades, y=y_real, marker_color='#0288D1')
+            ])
+            
+            # Aplicamos el diseño
             fig_bar.update_layout(
-                xaxis_tickangle=-45,
+                barmode='group',
+                template="plotly_dark",
                 plot_bgcolor='rgba(0,0,0,0)',
-                paper_bgcolor='rgba(0,0,0,0)'
+                paper_bgcolor='rgba(0,0,0,0)',
+                xaxis_tickangle=-45,
+                xaxis_title="Actividad",
+                yaxis_title="Porcentaje (%)",
+                legend_title_text="Tipo de Peso"
             )
+            
             st.plotly_chart(fig_bar, use_container_width=True)
 
 elif sst_input and not sst_valida:
