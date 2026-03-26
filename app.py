@@ -3,7 +3,7 @@ import pandas as pd
 import plotly.graph_objects as go
 import plotly.express as px
 from datetime import date
-import re  # <-- ¡ESTA ES LA LLAVE MÁGICA QUE EVITARÁ EL ERROR ROJO!
+import re
 
 # Configuración de la página
 st.set_page_config(page_title="Productividad Emergencias ⚡", page_icon="⚡", layout="wide", initial_sidebar_state="collapsed")
@@ -51,7 +51,7 @@ DATOS_ACTIVIDADES = {
     ]
 }
 
-# --- 2. ESTILO VISUAL (CON IMAGEN DE FONDO OPERACIONAL) ---
+# --- 2. ESTILO VISUAL (FONDO OPERACIONAL) ---
 styl = f"""
 <style>
     .stApp {{
@@ -93,7 +93,7 @@ c1, c2 = st.columns(2)
 fecha = c1.date_input("FECHA", value=date.today())
 sst_input = c2.text_input("SST")
 
-# Lógica a prueba de balas para los 7 dígitos usando 're'
+# Lógica de validación SST
 sst_valida = False
 if sst_input:
     if re.match(r'^\d{7}$', sst_input):
@@ -166,20 +166,19 @@ if sst_valida and circuito != "Seleccione...":
                 else:
                     st.info(f"Falta {(100-total_p):.2f}%")
 
-            # --- GRÁFICA DE BARRAS LIMPIA ---
+            # --- GRÁFICA DE BARRAS DIRECTA Y ROBUSTA ---
             st.write("### Comparativo de Pesos")
             df_plot = pd.DataFrame(datos_para_tabla)
             
-            df_melted = df_plot.melt(id_vars="Actividad", var_name="Tipo de Peso", value_name="Porcentaje")
-            
+            # Graficamos directamente sin usar funciones complejas que mareen al servidor
             fig_bar = px.bar(
-                df_melted, 
+                df_plot, 
                 x="Actividad", 
-                y="Porcentaje", 
-                color="Tipo de Peso",
+                y=["Peso Base", "Peso Real"], 
                 barmode="group",
+                labels={"value": "Porcentaje (%)", "variable": "Tipo de Peso"},
                 template="plotly_dark",
-                color_discrete_map={"Peso Base": "#B0BEC5", "Peso Real": "#0288D1"}
+                color_discrete_sequence=["#B0BEC5", "#0288D1"]
             )
             fig_bar.update_layout(
                 xaxis_tickangle=-45,
