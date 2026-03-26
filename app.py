@@ -5,7 +5,7 @@ from datetime import date
 import re
 
 # Configuración de la página
-st.set_page_config(page_title="Productividad Emergencias ⚡", page_icon="⚡", layout="wide", initial_sidebar_state="collapsed")
+st.set_page_config(page_title="Productividad V2", page_icon="⚡", layout="wide", initial_sidebar_state="collapsed")
 
 # --- 1. BASE DE DATOS INTEGRADA ---
 LISTA_CAPATACES = [
@@ -103,30 +103,15 @@ styl = f"""
         background-position: center;
         background-attachment: fixed;
     }}
-    
-    .stMarkdown, .stSubheader, .stTitle {{
-        margin-top: -10px !important;
-        margin-bottom: 2px !important;
-        text-shadow: 1px 1px 3px black;
-    }}
-    
-    input:disabled {{
-        color: #00E676 !important;
-        -webkit-text-fill-color: #00E676 !important;
-        font-weight: bold;
-        background-color: rgba(0, 230, 118, 0.1) !important;
-        border: 1px solid #00E676;
-    }}
-    
-    .stNumberInput div[data-baseweb="input"] input {{
-        color: #29B6F6 !important;
-        font-weight: bold;
-    }}
+    .stMarkdown, .stSubheader, .stTitle {{ margin-top: -10px !important; margin-bottom: 2px !important; text-shadow: 1px 1px 3px black; }}
+    input:disabled {{ color: #00E676 !important; -webkit-text-fill-color: #00E676 !important; font-weight: bold; background-color: rgba(0, 230, 118, 0.1) !important; border: 1px solid #00E676; }}
+    .stNumberInput div[data-baseweb="input"] input {{ color: #29B6F6 !important; font-weight: bold; }}
 </style>
 """
 st.markdown(styl, unsafe_allow_html=True)
 
-st.title("⚡ Control de Productividad Emergencias")
+# EL TRUCO VISUAL: Si no ves este título en tu app, Streamlit no ha actualizado.
+st.title("⚡ Control de Productividad - V2.0")
 st.markdown("---")
 
 # --- 3. SELECCIÓN DE DATOS ---
@@ -136,9 +121,8 @@ fecha = c1.date_input("FECHA", value=date.today())
 sst_input = c2.text_input("SST")
 
 sst_valida = False
-if sst_input:
-    if re.match(r'^\d{7}$', sst_input):
-        sst_valida = True
+if sst_input and re.match(r'^\d{7}$', sst_input):
+    sst_valida = True
 
 c3, c4 = st.columns(2)
 capataz = c3.selectbox("CAPATAZ", ["Seleccione..."] + LISTA_CAPATACES)
@@ -157,11 +141,11 @@ if sst_valida and circuito != "Seleccione...":
         
         datos_para_tabla = []
         for nombre_act in seleccion:
-            # LÓGICA ANTI-ERRORES: Busca "PESO", "Peso" o "peso". Así nunca va a fallar.
+            # EL ESCUDO ANTI-ERRORES: Usamos .get() para que NUNCA lance KeyError
             peso_base = 0.0
             for item in DATOS_ACTIVIDADES[circuito]:
                 if item.get("ACTIVIDAD") == nombre_act:
-                    peso_base = item.get("PESO", item.get("Peso", item.get("peso", 0.0)))
+                    peso_base = item.get("PESO", 0.0)
                     break
             
             with st.container():
@@ -178,11 +162,7 @@ if sst_valida and circuito != "Seleccione...":
                     peso_real = (avance / 100) * peso_base
                     st.text_input("Peso Real", value=f"{peso_real:.2f}%", disabled=True, key=f"pr_{nombre_act}")
                 
-                datos_para_tabla.append({
-                    "Actividad": nombre_act, 
-                    "Peso Base": peso_base, 
-                    "Peso Real": peso_real
-                })
+                datos_para_tabla.append({"Actividad": nombre_act, "Peso Base": peso_base, "Peso Real": peso_real})
                 st.markdown("---")
 
         # --- 4. DASHBOARD ---
@@ -190,11 +170,9 @@ if sst_valida and circuito != "Seleccione...":
             total_p = sum(d["Peso Real"] for d in datos_para_tabla)
             
             col_gauge, col_info = st.columns([2, 1])
-            
             with col_gauge:
                 fig_gauge = go.Figure(go.Indicator(
-                    mode = "gauge+number",
-                    value = total_p,
+                    mode = "gauge+number", value = total_p,
                     title = {'text': "Producción Total (%)", 'font': {'color': "white"}},
                     gauge = {
                         'axis': {'range': [0, 120], 'tickcolor': "white"},
@@ -212,9 +190,7 @@ if sst_valida and circuito != "Seleccione...":
                 else:
                     st.info(f"Falta {(100-total_p):.2f}%")
 
-            # --- GRÁFICA DE BARRAS DIRECTA ---
             st.write("### Comparativo de Pesos")
-            
             x_actividades = [d["Actividad"] for d in datos_para_tabla]
             y_base = [d["Peso Base"] for d in datos_para_tabla]
             y_real = [d["Peso Real"] for d in datos_para_tabla]
@@ -223,21 +199,14 @@ if sst_valida and circuito != "Seleccione...":
                 go.Bar(name='Peso Base', x=x_actividades, y=y_base, marker_color='#B0BEC5'),
                 go.Bar(name='Peso Real', x=x_actividades, y=y_real, marker_color='#0288D1')
             ])
-            
             fig_bar.update_layout(
-                barmode='group',
-                template="plotly_dark",
-                plot_bgcolor='rgba(0,0,0,0)',
-                paper_bgcolor='rgba(0,0,0,0)',
-                xaxis_tickangle=-45,
-                xaxis_title="Actividad",
-                yaxis_title="Porcentaje (%)",
-                legend_title_text="Tipo de Peso"
+                barmode='group', template="plotly_dark", plot_bgcolor='rgba(0,0,0,0)',
+                paper_bgcolor='rgba(0,0,0,0)', xaxis_tickangle=-45,
+                xaxis_title="Actividad", yaxis_title="Porcentaje (%)", legend_title_text="Tipo de Peso"
             )
-            
             st.plotly_chart(fig_bar, use_container_width=True)
 
 elif sst_input and not sst_valida:
-    st.warning("⚠️ La SST debe contener exactamente 7 números para habilitar la matriz.")
+    st.warning("⚠️ La SST debe contener exactamente 7 números.")
 else:
     st.info("💡 Ingrese la SST (7 números exactos) y seleccione el circuito para comenzar.")
