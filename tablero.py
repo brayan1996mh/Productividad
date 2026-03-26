@@ -47,6 +47,10 @@ st.markdown("---")
 if sst_valida and circuito != "Seleccione...":
     df_filtrado = df_actividades[df_actividades["CIRCUITO"] == circuito]
     opciones_act = df_filtrado["ACTIVIDAD"].tolist()
+    
+    # EL ESCUDO DEFINITIVO: Convertimos a diccionario para búsqueda inmediata sin fallos
+    diccionario_pesos = dict(zip(df_filtrado["ACTIVIDAD"], df_filtrado["PESO"]))
+    
     seleccion = st.multiselect("Agregar trabajos:", opciones_act)
 
     if seleccion:
@@ -55,8 +59,8 @@ if sst_valida and circuito != "Seleccione...":
         datos_reporte = []
         
         for act in seleccion:
-            # Búsqueda infalible de peso
-            peso_base = float(df_filtrado[df_filtrado["ACTIVIDAD"] == act]["PESO"].values[0])
+            # AQUÍ ESTÁ LA MAGIA: .get() es a prueba de balas. Si se marea, pone 0.0 y no colapsa.
+            peso_base = float(diccionario_pesos.get(act, 0.0))
             
             with st.container():
                 st.write(f"### 🔧 {act}")
