@@ -7,171 +7,132 @@ from datetime import date
 # Configuración de la página
 st.set_page_config(page_title="Productividad Emergencias ⚡", page_icon="⚡", layout="wide", initial_sidebar_state="collapsed")
 
-# 1. ESTILO PROFESIONAL Y SUBTIL (CSS)
-styl = f"""
+# --- 1. BASE DE DATOS INTEGRADA (Ya no necesitas los Excel) ---
+
+# Lista de Capataces
+LISTA_CAPATACES = [
+    "A. Aldonate", "A. Atoche", "A. Godoy", "A. Isuiza", "A. Torres", "A. Vigoria", 
+    "A. Villanueva", "C. Hernandez", "C. Mayaudon", "C. Ñaupas", "C. Padilla", 
+    "C. Salcedo", "D. Delgado", "D. Taquiri", "E. Ancco", "E. Antay", "E. Chihuan", 
+    "E. Diaz", "E. Flores", "E. La rosa", "F. Lozano", "F. Ramos", "H. Cabrera", 
+    "J. Abanto", "J. Apaza", "J. Arotinco", "J. Delgado", "J. Huari", "J. Panaifo", 
+    "J. Parra", "J. Salvador", "J. Suarez", "J. Villanueva", "L. Angeles", "L. Ayala", 
+    "L. Fiore", "M. Barrantes", "N. Pauro", "O. Aguilar", "P. Capcha", "R. Albites", 
+    "R. Rojas", "R. Torres", "S. Jacinto", "S. Lazaro", "V. Bordon", "V. Campos", 
+    "V. Orrillo", "V. Pérez", "V. Torres", "Y. Padilla"
+]
+
+# Diccionario de Actividades por Circuito (Tipo) y sus Pesos
+# He organizado esto según los datos que me pasaste en tus capturas
+DATOS_ACTIVIDADES = {
+    "AP (Alumbrado Público)": [
+        {"ACTIVIDAD": "Cable en cortocircuito de AP", "PESO": 0.61},
+        {"ACTIVIDAD": "Cable a tierra AP", "PESO": 0.23},
+        {"ACTIVIDAD": "Cable seccionado de AP", "PESO": 0.59},
+        {"ACTIVIDAD": "Cable de AP dañado por terceros", "PESO": 0.46},
+        {"ACTIVIDAD": "Cambio de fotocélula", "PESO": 0.46},
+        {"ACTIVIDAD": "Retiro de luminaria", "PESO": 0.31},
+        {"ACTIVIDAD": "Cambio de Llave AP", "PESO": 0.30},
+        {"ACTIVIDAD": "Red Aérea en cortocircuito", "PESO": 0.27}
+    ],
+    "SP (Servicio Particular)": [
+        {"ACTIVIDAD": "Cable en cortocircuito de SP", "PESO": 0.61},
+        {"ACTIVIDAD": "Cable a Tierra/ Electrizado SP", "PESO": 0.51},
+        {"ACTIVIDAD": "Cable seccionado De SP", "PESO": 0.59},
+        {"ACTIVIDAD": "Cable de SP Dañado por terceros", "PESO": 0.46},
+        {"ACTIVIDAD": "Red Aérea de AP y SP Sustraída", "PESO": 0.27}
+    ],
+    "POSTES": [
+        {"ACTIVIDAD": "Cambio de poste chocado (con redes)", "PESO": 0.77},
+        {"ACTIVIDAD": "Cambio de poste Corroído con redes", "PESO": 0.77},
+        {"ACTIVIDAD": "Reposición de poste chocado sin redes", "PESO": 0.77},
+        {"ACTIVIDAD": "Retiro de poste chocado", "PESO": 0.31}
+    ],
+    "CNX (Conexiones)": [
+        {"ACTIVIDAD": "Conexión Subterránea quemada de AP", "PESO": 0.36},
+        {"ACTIVIDAD": "Conexión Subterránea quemada de SP", "PESO": 0.36}
+    ]
+}
+
+# --- 2. ESTILO VISUAL ---
+st.markdown("""
 <style>
-    .stApp {{
-        background-image: linear-gradient(180deg, rgba(0,0,0,0.85) 0%, rgba(10,30,50,0.92) 100%), 
-                          url('data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIzMDAnIGhlaWdodD0iMzAwIiB2aWV3Qm94PSIwIDAgMzAwIDMwMCI+PHBhdGggZD0iTTAgMGgzMDB2MzAwSDB6IiBmaWxsPSJub25lIi8+PHBhdGggZD0iTTEwMCAxMDBoMTB2MTBoLTEwek0xNDAgMTAwaDEwdjEwaC0xMHpNMTgwIDEwMGgxMHYxMGgtMTB6TTIwMCAxMDBoMTB2MTBoLTEwek0yNDAgMTAwaDEwdjEwaC0xMHpNMTAwIDE0MGgxMHYxMGgtMTB6TTE4MCAxNDBoMTB2MTBoLTEwek0yMDAgMTQwaDEwdjEwaC0xMHpNMjQwIDE0MGgxMHYxMGgtMTB6TTEwMCAxODB4MTB2MTBoLTEwek0xNDAgMTgwSDB2LTE5NjhIMHoiIGZpbGw9Im5vbmUiLz48cGF0aCBkPSJNMCAwYzIuNDU4IDAgNC45MjEuMTM5IDcuMzc1LjQwOEw5Ny43MjUgOTEuMTVMMTYyLjcwNSA5M3MyNDUuNTQxIDExOC4wNjcgMjc4LjY5OCAxNTkuNjUyQzE1MC40MDQgMTg5LjY4IDkwLjgzMiAyNDkuMjUyIDAgMzAwY0MgLTQ4Ljg5OCA0MC43MDcgLTg4Ljc4NyA4OC43ODcgLTg4Ljc4N2MxNC44NDYgMCAyOS4wMTQgMy45MzggNDEuNzY0IDEwLjc3OEM3Ny43MDkgMTkyLjc5NCA0MC43MDcgMTU2LjAwNCAwIDM4NS43NEMwIDMwMCAtNDUuNzA5IDI3OS4wMzYgLTk1LjUzMSAyMzY4LjU4NEMxNzYuOTczIDI0NS41NDEgMjUuNTQxIDk1LjMzMSB6IiBmaWxsPSIjMDcwMDNiMjMiLz48L3N2Zz4=');
-        background-size: 400px;
-        background-repeat: repeat;
-        background-blend-mode: multiply;
-    }}
-    .stMarkdown, .stSubheader, .stTitle {{
-        margin-top: -10px !important;
-        margin-bottom: 2px !important;
-    }}
-    input:disabled {{
-        color: #00E676 !important;
-        -webkit-text-fill-color: #00E676 !important;
-        font-weight: bold;
-        background-color: rgba(0, 230, 118, 0.05) !important;
-    }}
+    .stApp { background-color: #0E1117; color: white; }
+    input:disabled { color: #00E676 !important; font-weight: bold; background-color: rgba(0, 230, 118, 0.05) !important; }
 </style>
-"""
-st.markdown(styl, unsafe_allow_html=True)
+""", unsafe_allow_html=True)
 
-# 2. CARGA INTELIGENTE DE DATOS EXCEL
-@st.cache_data
-def cargar_datos():
-    try:
-        # AHORA LEEMOS LOS ARCHIVOS EXCEL DIRECTAMENTE SIN INSTRUCCIONES EXTRA
-        df_act = pd.read_excel('Actividades emergencias.xlsx')
-        df_cap = pd.read_excel('Capataces Emergencias.xlsx')
-        
-        df_act.columns = df_act.columns.str.strip().str.upper()
-        df_cap.columns = df_cap.columns.str.strip().str.upper()
-        
-        col_circuito = [c for c in df_act.columns if 'CIRCUITO' in c][0]
-        col_actividad = [c for c in df_act.columns if 'ACTIV' in c][0]
-        col_peso = [c for c in df_act.columns if 'PESO' in c][0]
-        
-        df_act = df_act.dropna(subset=[col_circuito, col_actividad])
-        lista_capataces = df_cap.iloc[:, 0].dropna().unique().tolist()
-        
-        return df_act, lista_capataces, col_circuito, col_actividad, col_peso, None
-    except Exception as e:
-        return None, None, None, None, None, str(e)
-
-df_act, lista_capataces, col_circuito, col_actividad, col_peso, error_msj = cargar_datos()
-
-st.title("⚡ Tablero de Control de Productividad - Emergencias")
+st.title("⚡ Control de Productividad Integrado")
 st.markdown("---")
 
-if df_act is None:
-    st.error("⚠️ Hubo un problema al leer los archivos de Excel.")
-    if error_msj:
-        st.warning(f"Detalle técnico del error: {error_msj}")
-    st.stop()
-
-# 3. ENCABEZADO
+# --- 3. SELECCIÓN DE DATOS ---
 st.subheader("Datos Generales")
-col_f, col_s = st.columns(2)
-fecha_seleccionada = col_f.date_input("FECHA", value=date.today())
-sst_ingresado = col_s.text_input("SST")
+c1, c2 = st.columns(2)
+fecha = c1.date_input("FECHA", value=date.today())
+sst = c2.text_input("SST (Orden de Trabajo)")
 
-col_cap, col_cir = st.columns(2)
-capataz_seleccionado = col_cap.selectbox("CAPATAZ", ["Seleccione un capataz..."] + lista_capataces)
-lista_circuitos = df_act[col_circuito].unique().tolist()
-circuito_seleccionado = col_cir.selectbox("CIRCUITO", ["Seleccione un circuito..."] + lista_circuitos)
+c3, c4 = st.columns(2)
+capataz = c3.selectbox("CAPATAZ", ["Seleccione..."] + LISTA_CAPATACES)
+circuito = c4.selectbox("TIPO DE CIRCUITO / SECTOR", ["Seleccione..."] + list(DATOS_ACTIVIDADES.keys()))
 
 st.markdown("---")
 
-# 4. SELECCIÓN DE ACTIVIDADES
-st.subheader("Selección de Actividades Asignadas")
-
-if circuito_seleccionado != "Seleccione un circuito...":
-    actividades_filtradas = df_act[df_act[col_circuito] == circuito_seleccionado]
-    lista_actividades = actividades_filtradas[col_actividad].tolist()
+if circuito != "Seleccione...":
+    st.subheader(f"Actividades para {circuito}")
     
-    actividades_seleccionadas = st.multiselect(
-        "Toca para agregar trabajos al plan del día:", 
-        options=lista_actividades,
-        label_visibility="collapsed"
-    )
+    # Extraer solo los nombres de actividades para el multiselect
+    opciones_act = [a["ACTIVIDAD"] for a in DATOS_ACTIVIDADES[circuito]]
+    
+    seleccion = st.multiselect("Busca y agrega las actividades realizadas:", opciones_act)
 
-    if actividades_seleccionadas:
+    if seleccion:
         st.markdown("---")
-        # 5. MATRIZ DE PRODUCTIVIDAD
-        st.subheader("Matríz de Productividad")
+        st.subheader("Matríz de Avance")
         
-        datos_reporte = []
-        
-        for act in actividades_seleccionadas:
+        datos_finales = []
+        for nombre_act in seleccion:
+            # Buscar el peso base en nuestra lista integrada
+            peso_base = next(item["PESO"] for item in DATOS_ACTIVIDADES[circuito] if item["ACTIVIDAD"] == nombre_act)
+            
             with st.container():
-                st.write(f"### 🔧 {act}")
-                
-                peso_base_val = actividades_filtradas[actividades_filtradas[col_actividad] == act][col_peso].values[0]
-                if isinstance(peso_base_val, str):
-                    peso_base_val = float(peso_base_val.replace('%', '').replace(',', '.').strip())
-                else:
-                    peso_base_val = float(peso_base_val)
-                
-                col1, col2, col3, col4 = st.columns(4) 
+                st.write(f"### 🔧 {nombre_act}")
+                col1, col2, col3, col4 = st.columns(4)
                 
                 with col1:
-                    estado = st.selectbox("Estado", ["", "Finalizado", "Devuelto", "Indebido"], key=f"est_{act}")
-                
+                    estado = st.selectbox("Estado", ["Finalizado", "Devuelto", "Pendiente"], key=f"est_{nombre_act}")
                 with col2:
-                    st.text_input("% Peso Base", value=f"{peso_base_val}%", disabled=True, key=f"base_{act}")
-                
+                    st.text_input("Peso Base", value=f"{peso_base}%", disabled=True, key=f"pb_{nombre_act}")
                 with col3:
-                    avance = st.number_input("% Avance (0-100)", min_value=0, max_value=100, value=0, step=10, key=f"av_{act}")
-                
+                    avance = st.number_input("% Avance", 0, 100, 100, 10, key=f"av_{nombre_act}")
                 with col4:
-                    peso_real = (avance / 100.0) * peso_base_val
-                    st.text_input("% Peso Real", value=f"{peso_real:.1f}%", disabled=True)
+                    peso_real = (avance / 100) * peso_base
+                    st.text_input("Peso Real", value=f"{peso_real:.2f}%", disabled=True, key=f"pr_{nombre_act}")
                 
-                st.markdown("<hr style='margin-top: 5px; margin-bottom: 15px;'>", unsafe_allow_html=True)
-                
-                datos_reporte.append({
-                    "Actividad": act,
-                    "Peso Base": peso_base_val,
-                    "Estado": estado,
-                    "Avance": avance,
-                    "Peso Real": peso_real
-                })
-                
-        df_reporte = pd.DataFrame(datos_reporte)
+                datos_finales.append({"Act": nombre_act, "Real": peso_real, "Base": peso_base})
+                st.markdown("---")
+
+        # --- 4. DASHBOARD ---
+        total_p = sum(d["Real"] for d in datos_finales)
         
-        # 6. DASHBOARD
-        if not df_reporte.empty:
-            st.subheader("Dashboard de Avance de Producción")
-            total_peso_real = df_reporte["Peso Real"].sum()
-            
-            fig_gauge = go.Figure(go.Indicator(
+        col_gauge, col_info = st.columns([2, 1])
+        
+        with col_gauge:
+            fig = go.Figure(go.Indicator(
                 mode = "gauge+number",
-                value = total_peso_real,
-                domain = {'x': [0, 1], 'y': [0, 1]},
-                title = {'text': "Avance Real Acumulado", 'font': {'size': 24, 'color': "white"}},
+                value = total_p,
+                title = {'text': "Productividad Total del Día"},
                 gauge = {
-                    'axis': {'range': [0, max(150, total_peso_real + 20)], 'tickwidth': 1, 'tickcolor': "white"},
-                    'bar': {'color': "#00E676" if total_peso_real >= 100 else "#29B6F6"}, 
-                    'bgcolor': "black",
-                    'borderwidth': 1,
-                    'bordercolor': "gray",
-                    'steps': [{'range': [0, 100], 'color': "rgba(255, 235, 238, 0.1)"}],
-                    'threshold': {'line': {'color': "red", 'width': 3}, 'thickness': 0.75, 'value': 100}
-                },
-                number = {'suffix': "%", 'font': {'size': 40, 'color': "white"}}
+                    'axis': {'range': [0, 120]},
+                    'bar': {'color': "#00E676" if total_p >= 100 else "#FFEB3B"},
+                    'threshold': {'line': {'color': "red", 'width': 4}, 'thickness': 0.75, 'value': 100}
+                }
             ))
-            
-            fig_bar = px.bar(
-                df_reporte, x="Actividad", y=["Peso Base", "Peso Real"], 
-                barmode='group', labels={'value': '% Peso Diario'},
-                template="plotly_dark", color_discrete_sequence=["#B0BEC5", "#0288D1"] 
-            )
-            fig_bar.update_layout(xaxis_tickangle=-45, yaxis=dict(range=[0, max(120, total_peso_real)])) 
-            
-            colCharts1, colCharts2 = st.columns(2)
-            with colCharts1:
-                st.plotly_chart(fig_gauge, use_container_width=True)
-            with colCharts2:
-                st.plotly_chart(fig_bar, use_container_width=True)
-            
-            if total_peso_real >= 100:
-                st.success(f"⚡ Objetivo Cumplido: La cuadrilla alcanzó un {total_peso_real:.1f}% real acumulado.")
+            fig.update_layout(paper_bgcolor='rgba(0,0,0,0)', font={'color': "white"})
+            st.plotly_chart(fig, use_container_width=True)
+
+        with col_info:
+            st.metric("Puntaje Total", f"{total_p:.2f}%")
+            if total_p >= 100:
+                st.success("✅ ¡Meta cumplida!")
             else:
-                st.warning(f"⚠️ Atención: Cumplimiento al {total_peso_real:.1f}%. Faltan {100 - total_peso_real:.1f}% real para cerrar la meta diaria.")
-else:
-    st.info("👆 Selecciona un Circuito primero para cargar las actividades correspondientes.")
+                st.warning(f"Faltan {(100-total_p):.2f}% para la meta.")
