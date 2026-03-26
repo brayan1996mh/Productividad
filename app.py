@@ -31,13 +31,13 @@ styl = f"""
 """
 st.markdown(styl, unsafe_allow_html=True)
 
-# 2. CARGA INTELIGENTE DE DATOS (Mejorada)
+# 2. CARGA INTELIGENTE DE DATOS EXCEL
 @st.cache_data
 def cargar_datos():
     try:
-        # Agregamos sep=None y engine='python' para que detecte si hay puntos y comas
-        df_act = pd.read_csv('Actividades emergencias.xlsx - Hoja1.csv', sep=None, engine='python')
-        df_cap = pd.read_csv('Capataces Emergencias.xlsx - Hoja1.csv', sep=None, engine='python')
+        # AHORA LEEMOS LOS ARCHIVOS EXCEL DIRECTAMENTE (.xlsx)
+        df_act = pd.read_excel('Actividades emergencias.xlsx')
+        df_cap = pd.read_excel('Capataces Emergencias.xlsx')
         
         df_act.columns = df_act.columns.str.strip().str.upper()
         df_cap.columns = df_cap.columns.str.strip().str.upper()
@@ -51,7 +51,6 @@ def cargar_datos():
         
         return df_act, lista_capataces, col_circuito, col_actividad, col_peso, None
     except Exception as e:
-        # Si falla, devolvemos el error exacto para saber qué pasa
         return None, None, None, None, None, str(e)
 
 df_act, lista_capataces, col_circuito, col_actividad, col_peso, error_msj = cargar_datos()
@@ -60,10 +59,9 @@ st.title("⚡ Tablero de Control de Productividad - Emergencias")
 st.markdown("---")
 
 if df_act is None:
-    st.error("⚠️ Hubo un problema al leer los archivos de Excel/CSV.")
+    st.error("⚠️ Hubo un problema al leer los archivos de Excel.")
     if error_msj:
         st.warning(f"Detalle técnico del error: {error_msj}")
-    st.info("Asegúrate de que los archivos estén subidos a GitHub y no estén vacíos.")
     st.stop()
 
 # 3. ENCABEZADO
