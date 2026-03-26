@@ -17,6 +17,10 @@ st.markdown("""
     .stMarkdown, .stSubheader, .stTitle { text-shadow: 1px 1px 3px black; color: white; }
     input:disabled { color: #00E676 !important; -webkit-text-fill-color: #00E676 !important; font-weight: bold; background-color: rgba(0, 230, 118, 0.1) !important; border: 1px solid #00E676; }
     .stNumberInput div[data-baseweb="input"] input { color: #29B6F6 !important; font-weight: bold; }
+    
+    /* El diseño de la nueva caja que no se congela */
+    .caja-peso-real { background-color: rgba(0, 230, 118, 0.1); border: 1px solid #00E676; border-radius: 8px; padding: 8px 12px; color: #00E676; font-weight: bold; font-family: sans-serif; height: 42px; display: flex; align-items: center; margin-top: 1px; }
+    .lbl-peso { font-size: 14px; margin-bottom: 2px; color: #FAFAFA; }
 </style>
 """, unsafe_allow_html=True)
 
@@ -66,16 +70,18 @@ if sst_valida and circuito != "Seleccione...":
                 estado = col1.selectbox("Estado", ["Seleccione...", "Finalizado", "Devuelto", "Pendiente"], key=f"e_{act}")
                 col2.text_input("Peso Base", value=f"{peso_base}%", disabled=True, key=f"b_{act}")
                 
-                # Caja limpia, sin lógicas de relleno automático. Obliga a presionar Enter.
-                avance = col3.number_input("Avance (%)", min_value=0, max_value=100, value=None, step=10, placeholder="Ej: 100 (Presiona Enter)", key=f"a_{act}")
+                avance = col3.number_input("Avance (%)", min_value=0, max_value=100, value=None, step=10, placeholder="Ej: 100", key=f"a_{act}")
                 
-                # Cálculo robusto y directo
                 if avance is not None:
                     peso_real = (float(avance) / 100.0) * float(peso_base)
                 else:
                     peso_real = 0.0
                     
-                col4.text_input("Peso Real", value=f"{peso_real:.2f}%", disabled=True, key=f"r_{act}")
+                # CAJA VISUAL A PRUEBA DE CONGELAMIENTO
+                col4.markdown(f"""
+                <div class="lbl-peso">Peso Real</div>
+                <div class="caja-peso-real">{peso_real:.2f}%</div>
+                """, unsafe_allow_html=True)
                 
                 datos_reporte.append({"Act": act, "Base": peso_base, "Real": peso_real})
         
