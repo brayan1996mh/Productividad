@@ -55,7 +55,6 @@ st.markdown("""
 <style>
     .stApp { background-color: #0E1117; color: white; }
     input:disabled { color: #00E676 !important; font-weight: bold; background-color: rgba(0, 230, 118, 0.05) !important; }
-    /* Estilo para que el número de avance se vea bien con el % */
     .stNumberInput div[data-baseweb="input"] input { color: #29B6F6 !important; font-weight: bold; }
 </style>
 """, unsafe_allow_html=True)
@@ -71,8 +70,8 @@ fecha = c1.date_input("FECHA", value=date.today())
 # CAMPO SST LIMPIO
 sst_input = c2.text_input("SST")
 
-# Validación lógica (7 números exactos)
-sst_valida = sst_input.isdigit() and len(sst_input) == 7
+# LÓGICA: Se activa solo si son exactamente 7 caracteres y todos son números
+sst_valida = sst_input.isnumeric() and len(sst_input) == 7
 
 c3, c4 = st.columns(2)
 capataz = c3.selectbox("CAPATAZ", ["Seleccione..."] + LISTA_CAPATACES)
@@ -80,7 +79,6 @@ circuito = c4.selectbox("CIRCUITO / SECTOR", ["Seleccione..."] + list(DATOS_ACTI
 
 st.markdown("---")
 
-# Solo mostramos actividades si la SST cumple la regla de 7 números
 if sst_valida and circuito != "Seleccione...":
     st.subheader(f"Actividades: {circuito}")
     opciones_act = [a["ACTIVIDAD"] for a in DATOS_ACTIVIDADES[circuito]]
@@ -103,16 +101,15 @@ if sst_valida and circuito != "Seleccione...":
                 with col2:
                     st.text_input("Peso Base", value=f"{peso_base}%", disabled=True, key=f"pb_{nombre_act}")
                 with col3:
-                    # Formato de porcentaje directo en el campo
                     avance = st.number_input("Avance (%)", 0, 100, 100, 10, key=f"av_{nombre_act}", format="%d%%")
                 with col4:
                     peso_real = (avance / 100) * peso_base
                     st.text_input("Peso Real", value=f"{peso_real:.2f}%", disabled=True, key=f"pr_{nombre_act}")
                 
-                datos_finales.append({"Act": nombre_act, "Real": peso_real, "Base": peso_base})
+                datos_finales.append({"Act": nombre_act, "Real": peso_real})
                 st.markdown("---")
 
-        # --- 4. DASHBOARD ---
+        # --- DASHBOARD ---
         total_p = sum(d["Real"] for d in datos_finales)
         col_gauge, col_info = st.columns([2, 1])
         
@@ -127,7 +124,7 @@ if sst_valida and circuito != "Seleccione...":
                     'threshold': {'line': {'color': "red", 'width': 4}, 'thickness': 0.75, 'value': 100}
                 }
             ))
-            fig.update_layout(paper_bgcolor='rgba(0,0,0,0)', font={'color': "white"})
+            fig.update_layout(paper_bgcolor='rgba(0,0,0,0)', font={'color': "white"}, height=350)
             st.plotly_chart(fig, use_container_width=True)
 
         with col_info:
@@ -138,6 +135,6 @@ if sst_valida and circuito != "Seleccione...":
                 st.info(f"Falta {(100-total_p):.2f}%")
 
 elif sst_input and not sst_valida:
-    st.error("⚠️ La SST debe ser de exactamente 7 números.")
+    st.warning("⚠️ La SST debe contener exactamente 7 números para continuar.")
 else:
-    st.info("💡 Ingrese la SST (7 dígitos) y seleccione un circuito para comenzar.")
+    st.info("💡 Complete la SST (7 números) y el circuito para habilitar el registro.")
