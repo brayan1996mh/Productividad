@@ -7,7 +7,7 @@ import re
 # Configuración de la página
 st.set_page_config(page_title="Productividad Emergencias ⚡", page_icon="⚡", layout="wide", initial_sidebar_state="collapsed")
 
-# --- 1. BASE DE DATOS INTEGRADA (AHORA SÍ, 100% COMPLETA) ---
+# --- 1. BASE DE DATOS INTEGRADA ---
 LISTA_CAPATACES = [
     "A. Aldonate", "A. Atoche", "A. Godoy", "A. Isuiza", "A. Torres", "A. Vigoria", 
     "A. Villanueva", "C. Hernandez", "C. Mayaudon", "C. Ñaupas", "C. Padilla", 
@@ -135,7 +135,6 @@ c1, c2 = st.columns(2)
 fecha = c1.date_input("FECHA", value=date.today())
 sst_input = c2.text_input("SST")
 
-# Lógica de validación SST
 sst_valida = False
 if sst_input:
     if re.match(r'^\d{7}$', sst_input):
@@ -158,7 +157,12 @@ if sst_valida and circuito != "Seleccione...":
         
         datos_para_tabla = []
         for nombre_act in seleccion:
-            peso_base = next(item["PESO"] for item in DATOS_ACTIVIDADES[circuito] if item["ACTIVIDAD"] == nombre_act)
+            # LÓGICA ANTI-ERRORES: Busca "PESO", "Peso" o "peso". Así nunca va a fallar.
+            peso_base = 0.0
+            for item in DATOS_ACTIVIDADES[circuito]:
+                if item.get("ACTIVIDAD") == nombre_act:
+                    peso_base = item.get("PESO", item.get("Peso", item.get("peso", 0.0)))
+                    break
             
             with st.container():
                 st.write(f"### 🔧 {nombre_act}")
@@ -208,7 +212,7 @@ if sst_valida and circuito != "Seleccione...":
                 else:
                     st.info(f"Falta {(100-total_p):.2f}%")
 
-            # --- GRÁFICA DE BARRAS (MÉTODO INFALIBLE) ---
+            # --- GRÁFICA DE BARRAS DIRECTA ---
             st.write("### Comparativo de Pesos")
             
             x_actividades = [d["Actividad"] for d in datos_para_tabla]
