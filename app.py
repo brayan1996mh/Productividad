@@ -3,6 +3,7 @@ import pandas as pd
 import plotly.graph_objects as go
 import plotly.express as px
 from datetime import date
+import re  # <-- ¡ESTA ES LA LLAVE MÁGICA QUE EVITARÁ EL ERROR ROJO!
 
 # Configuración de la página
 st.set_page_config(page_title="Productividad Emergencias ⚡", page_icon="⚡", layout="wide", initial_sidebar_state="collapsed")
@@ -54,7 +55,6 @@ DATOS_ACTIVIDADES = {
 styl = f"""
 <style>
     .stApp {{
-        /* Imagen de fondo de operadores en líneas de alta tensión con degradado oscuro para no opacar los datos */
         background-image: linear-gradient(180deg, rgba(5, 15, 25, 0.85) 0%, rgba(5, 10, 15, 0.95) 100%), 
                           url('https://images.unsplash.com/photo-1621905251189-08b45d6a269e?q=80&w=2000&auto=format&fit=crop');
         background-size: cover;
@@ -65,10 +65,9 @@ styl = f"""
     .stMarkdown, .stSubheader, .stTitle {{
         margin-top: -10px !important;
         margin-bottom: 2px !important;
-        text-shadow: 1px 1px 3px black; /* Sombra para que las letras resalten sobre el fondo */
+        text-shadow: 1px 1px 3px black;
     }}
     
-    /* Cajas bloqueadas en verde neón */
     input:disabled {{
         color: #00E676 !important;
         -webkit-text-fill-color: #00E676 !important;
@@ -77,7 +76,6 @@ styl = f"""
         border: 1px solid #00E676;
     }}
     
-    /* Caja de avance en azul eléctrico */
     .stNumberInput div[data-baseweb="input"] input {{
         color: #29B6F6 !important;
         font-weight: bold;
@@ -95,10 +93,10 @@ c1, c2 = st.columns(2)
 fecha = c1.date_input("FECHA", value=date.today())
 sst_input = c2.text_input("SST")
 
-# Lógica robusta para validar la SST
+# Lógica a prueba de balas para los 7 dígitos usando 're'
 sst_valida = False
 if sst_input:
-    if sst_input.isnumeric() and len(sst_input) == 7:
+    if re.match(r'^\d{7}$', sst_input):
         sst_valida = True
 
 c3, c4 = st.columns(2)
@@ -172,7 +170,6 @@ if sst_valida and circuito != "Seleccione...":
             st.write("### Comparativo de Pesos")
             df_plot = pd.DataFrame(datos_para_tabla)
             
-            # Reorganizamos los datos para que Plotly los dibuje correctamente
             df_melted = df_plot.melt(id_vars="Actividad", var_name="Tipo de Peso", value_name="Porcentaje")
             
             fig_bar = px.bar(
@@ -184,7 +181,6 @@ if sst_valida and circuito != "Seleccione...":
                 template="plotly_dark",
                 color_discrete_map={"Peso Base": "#B0BEC5", "Peso Real": "#0288D1"}
             )
-            # Evitamos que los textos se encimen
             fig_bar.update_layout(
                 xaxis_tickangle=-45,
                 plot_bgcolor='rgba(0,0,0,0)',
