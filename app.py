@@ -21,7 +21,6 @@ styl = f"""
         margin-top: -10px !important;
         margin-bottom: 2px !important;
     }}
-    /* Forzar el color verde y actualización visual en inputs deshabilitados */
     input:disabled {{
         color: #00E676 !important;
         -webkit-text-fill-color: #00E676 !important;
@@ -32,61 +31,58 @@ styl = f"""
 """
 st.markdown(styl, unsafe_allow_html=True)
 
-# 2. CARGA INTELIGENTE DE DATOS
+# 2. CARGA INTELIGENTE DE DATOS (Mejorada)
 @st.cache_data
 def cargar_datos():
     try:
-        # AQUI ESTÁN LOS NOMBRES EXACTOS DE TUS ARCHIVOS
-        df_act = pd.read_csv('Actividades emergencias.xlsx - Hoja1.csv')
-        df_cap = pd.read_csv('Capataces Emergencias.xlsx - Hoja1.csv')
+        # Agregamos sep=None y engine='python' para que detecte si hay puntos y comas
+        df_act = pd.read_csv('Actividades emergencias.xlsx - Hoja1.csv', sep=None, engine='python')
+        df_cap = pd.read_csv('Capataces Emergencias.xlsx - Hoja1.csv', sep=None, engine='python')
         
-        # Normalizar nombres de columnas a mayúsculas
         df_act.columns = df_act.columns.str.strip().str.upper()
         df_cap.columns = df_cap.columns.str.strip().str.upper()
         
-        # Encontrar las columnas dinámicamente
         col_circuito = [c for c in df_act.columns if 'CIRCUITO' in c][0]
         col_actividad = [c for c in df_act.columns if 'ACTIV' in c][0]
         col_peso = [c for c in df_act.columns if 'PESO' in c][0]
         
-        # Limpiar datos
         df_act = df_act.dropna(subset=[col_circuito, col_actividad])
         lista_capataces = df_cap.iloc[:, 0].dropna().unique().tolist()
         
-        return df_act, lista_capataces, col_circuito, col_actividad, col_peso
+        return df_act, lista_capataces, col_circuito, col_actividad, col_peso, None
     except Exception as e:
-        return None, None, None, None, None
+        # Si falla, devolvemos el error exacto para saber qué pasa
+        return None, None, None, None, None, str(e)
 
-df_act, lista_capataces, col_circuito, col_actividad, col_peso = cargar_datos()
+df_act, lista_capataces, col_circuito, col_actividad, col_peso, error_msj = cargar_datos()
 
 st.title("⚡ Tablero de Control de Productividad - Emergencias")
 st.markdown("---")
 
 if df_act is None:
-    st.error("⚠️ No se encontraron los archivos CSV. Por favor, sube 'Actividades emergencias.xlsx - Hoja1.csv' y 'Capataces Emergencias.xlsx - Hoja1.csv' a tu GitHub.")
+    st.error("⚠️ Hubo un problema al leer los archivos de Excel/CSV.")
+    if error_msj:
+        st.warning(f"Detalle técnico del error: {error_msj}")
+    st.info("Asegúrate de que los archivos estén subidos a GitHub y no estén vacíos.")
     st.stop()
 
-# 3. ENCABEZADO: DATOS DEL REPORTE
+# 3. ENCABEZADO
 st.subheader("Datos Generales")
 col_f, col_s = st.columns(2)
 fecha_seleccionada = col_f.date_input("FECHA", value=date.today())
 sst_ingresado = col_s.text_input("SST")
 
 col_cap, col_cir = st.columns(2)
-# Menú desplegable de Capataces
 capataz_seleccionado = col_cap.selectbox("CAPATAZ", ["Seleccione un capataz..."] + lista_capataces)
-
-# Menú desplegable de Circuitos
 lista_circuitos = df_act[col_circuito].unique().tolist()
 circuito_seleccionado = col_cir.selectbox("CIRCUITO", ["Seleccione un circuito..."] + lista_circuitos)
 
 st.markdown("---")
 
-# 4. SELECCIÓN DE ACTIVIDADES (Dependiente del Circuito)
+# 4. SELECCIÓN DE ACTIVIDADES
 st.subheader("Selección de Actividades Asignadas")
 
 if circuito_seleccionado != "Seleccione un circuito...":
-    # Filtrar actividades según el circuito elegido
     actividades_filtradas = df_act[df_act[col_circuito] == circuito_seleccionado]
     lista_actividades = actividades_filtradas[col_actividad].tolist()
     
@@ -107,10 +103,11 @@ if circuito_seleccionado != "Seleccione un circuito...":
             with st.container():
                 st.write(f"### 🔧 {act}")
                 
-                # Obtener el peso base
                 peso_base_val = actividades_filtradas[actividades_filtradas[col_actividad] == act][col_peso].values[0]
                 if isinstance(peso_base_val, str):
-                    peso_base_val = float(peso_base_val.replace('%', '').strip())
+                    peso_base_val = float(peso_base_val.replace('%', '').replace(',', '.').strip())
+                else:
+                    peso_base_val = float(peso_base_val)
                 
                 col1, col2, col3, col4 = st.columns(4) 
                 
@@ -124,8 +121,7 @@ if circuito_seleccionado != "Seleccione un circuito...":
                     avance = st.number_input("% Avance (0-100)", min_value=0, max_value=100, value=0, step=10, key=f"av_{act}")
                 
                 with col4:
-                    peso_real = (avance / 100.0) * float(peso_base_val)
-                    # Casilla sin key para forzar actualización dinámica en Streamlit
+                    peso_real = (avance / 100.0) * peso_base_val
                     st.text_input("% Peso Real", value=f"{peso_real:.1f}%", disabled=True)
                 
                 st.markdown("<hr style='margin-top: 5px; margin-bottom: 15px;'>", unsafe_allow_html=True)
@@ -140,7 +136,7 @@ if circuito_seleccionado != "Seleccione un circuito...":
                 
         df_reporte = pd.DataFrame(datos_reporte)
         
-        # 6. DASHBOARD DE AVANCE DE PRODUCCIÓN
+        # 6. DASHBOARD
         if not df_reporte.empty:
             st.subheader("Dashboard de Avance de Producción")
             total_peso_real = df_reporte["Peso Real"].sum()
