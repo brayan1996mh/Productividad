@@ -109,10 +109,15 @@ if sst_valida and circuito != "Seleccione...":
                         from google.oauth2.service_account import Credentials
                         
                         scopes = ["https://www.googleapis.com/auth/spreadsheets", "https://www.googleapis.com/auth/drive"]
-                        info_credenciales = json.loads(st.secrets["gcp_json"])
                         
-                        # --- EL ESCUDO ANTI-PEM (Arregla la llave de Google automáticamente) ---
-                        info_credenciales["private_key"] = info_credenciales["private_key"].replace('\\n', '\n')
+                        # --- LIMPIEZA PROFUNDA DE LA LLAVE ---
+                        texto_secreto = st.secrets["gcp_json"].strip()
+                        info_credenciales = json.loads(texto_secreto)
+                        
+                        llave_bruta = info_credenciales.get("private_key", "")
+                        # Esto plancha cualquier error de salto de línea de Windows o copy-paste
+                        llave_limpia = llave_bruta.replace("\\n", "\n").replace("\r", "").strip()
+                        info_credenciales["private_key"] = llave_limpia
                         
                         credenciales = Credentials.from_service_account_info(info_credenciales, scopes=scopes)
                         cliente = gspread.authorize(credenciales)
